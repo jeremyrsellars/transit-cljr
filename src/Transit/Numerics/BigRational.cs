@@ -36,12 +36,13 @@
 
 using System;
 using System.Globalization;
-using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
+using clojure.lang;
+using TransitCljr;
 
-namespace Beerendonk.Transit.Numerics
+namespace Sellars.Transit.Numerics.Alpha
 {
     /// <summary>
     /// Represents a rational with infinite precision.
@@ -56,7 +57,7 @@ namespace Beerendonk.Transit.Numerics
 
         private static readonly BigRational s_brZero = new BigRational(BigInteger.Zero);
         private static readonly BigRational s_brOne = new BigRational(BigInteger.One);
-        private static readonly BigRational s_brMinusOne = new BigRational(BigInteger.MinusOne);
+        private static readonly BigRational s_brMinusOne = new BigRational(BigInteger.NegativeOne);
 
         // ---- SECTION:  members for internal support ---------*
         #region Members for Internal Support
@@ -69,7 +70,7 @@ namespace Beerendonk.Transit.Numerics
             public ulong uu;
         }
         private const int DoubleMaxScale = 308;
-        private static readonly BigInteger s_bnDoublePrecision = BigInteger.Pow(10, DoubleMaxScale);
+        private static readonly BigInteger s_bnDoublePrecision = BigInteger.Power(10, DoubleMaxScale);
         private static readonly BigInteger s_bnDoubleMaxValue = (BigInteger)Double.MaxValue;
         private static readonly BigInteger s_bnDoubleMinValue = (BigInteger)Double.MinValue;
 
@@ -84,7 +85,7 @@ namespace Beerendonk.Transit.Numerics
         private const int DecimalScaleMask = 0x00FF0000;
         private const int DecimalSignMask = unchecked((int)0x80000000);
         private const int DecimalMaxScale = 28;
-        private static readonly BigInteger s_bnDecimalPrecision = BigInteger.Pow(10, DecimalMaxScale);
+        private static readonly BigInteger s_bnDecimalPrecision = BigInteger.Power(10, DecimalMaxScale);
         private static readonly BigInteger s_bnDecimalMaxValue = (BigInteger)Decimal.MaxValue;
         private static readonly BigInteger s_bnDecimalMinValue = (BigInteger)Decimal.MinValue;
 
@@ -145,7 +146,7 @@ namespace Beerendonk.Transit.Numerics
         {
             get
             {
-                return m_numerator.Sign;
+                return m_numerator.Signum;
             }
         }
 
@@ -217,7 +218,8 @@ namespace Beerendonk.Transit.Numerics
         /// <returns></returns>
         public BigRational GetFractionPart()
         {
-            return new BigRational(BigInteger.Remainder(m_numerator, m_denominator), m_denominator);
+            BigInteger.DivRem(m_numerator, m_denominator, out var remainder);
+            return new BigRational(remainder, m_denominator);
         }
 
         /// <summary>
@@ -279,9 +281,9 @@ namespace Beerendonk.Transit.Numerics
         public override String ToString()
         {
             StringBuilder ret = new StringBuilder();
-            ret.Append(m_numerator.ToString("R", CultureInfo.InvariantCulture));
+            ret.Append(m_numerator.ToString(CultureInfo.InvariantCulture)); //System.Numerics used ("R", CultureInfo.InvariantCulture)
             ret.Append(c_solidus);
-            ret.Append(Denominator.ToString("R", CultureInfo.InvariantCulture));
+            ret.Append(Denominator.ToString(CultureInfo.InvariantCulture)); //System.Numerics used ("R", CultureInfo.InvariantCulture)
             return ret.ToString();
         }
 
@@ -357,11 +359,11 @@ namespace Beerendonk.Transit.Numerics
 
             if (exponent > 0)
             {
-                m_numerator = BigInteger.Pow(m_numerator, exponent);
+                m_numerator = BigInteger.Power(m_numerator, exponent);
             }
             else if (exponent < 0)
             {
-                m_denominator = BigInteger.Pow(m_denominator, -exponent);
+                m_denominator = BigInteger.Power(m_denominator, -exponent);
             }
             if (sign < 0)
             {
@@ -394,7 +396,7 @@ namespace Beerendonk.Transit.Numerics
 
             // build up the numerator
             ulong ul = (((ulong)(uint)bits[2]) << 32) | ((ulong)(uint)bits[1]);   // (hi    << 32) | (mid)
-            m_numerator = (new BigInteger(ul) << 32) | (uint)bits[0];             // (hiMid << 32) | (low)
+            m_numerator = (new BigInteger(+1, (uint)ul) << 32) | (uint)bits[0];             // (hiMid << 32) | (low)
 
             bool isNegative = (bits[3] & DecimalSignMask) != 0;
             if (isNegative)
@@ -404,7 +406,7 @@ namespace Beerendonk.Transit.Numerics
 
             // build up the denominator
             int scale = (bits[3] & DecimalScaleMask) >> 16;     // 0-28, power of 10 to divide numerator by
-            m_denominator = BigInteger.Pow(10, scale);
+            m_denominator = BigInteger.Power(10, scale);
 
             Simplify();
         }
@@ -417,17 +419,17 @@ namespace Beerendonk.Transit.Numerics
         /// <exception cref="System.DivideByZeroException"></exception>
         public BigRational(BigInteger numerator, BigInteger denominator)
         {
-            if (denominator.Sign == 0)
+            if (denominator.Signum == 0)
             {
                 throw new DivideByZeroException();
             }
-            else if (numerator.Sign == 0)
+            else if (numerator.Signum == 0)
             {
                 // 0/m -> 0/1
                 m_numerator = BigInteger.Zero;
                 m_denominator = BigInteger.One;
             }
-            else if (denominator.Sign < 0)
+            else if (denominator.Signum < 0)
             {
                 m_numerator = BigInteger.Negate(numerator);
                 m_denominator = BigInteger.Negate(denominator);
@@ -449,16 +451,16 @@ namespace Beerendonk.Transit.Numerics
         /// <exception cref="System.DivideByZeroException"></exception>
         public BigRational(BigInteger whole, BigInteger numerator, BigInteger denominator)
         {
-            if (denominator.Sign == 0)
+            if (denominator.Signum == 0)
             {
                 throw new DivideByZeroException();
             }
-            else if (numerator.Sign == 0 && whole.Sign == 0)
+            else if (numerator.Signum == 0 && whole.Signum == 0)
             {
                 m_numerator = BigInteger.Zero;
                 m_denominator = BigInteger.One;
             }
-            else if (denominator.Sign < 0)
+            else if (denominator.Signum < 0)
             {
                 m_denominator = BigInteger.Negate(denominator);
                 m_numerator = (BigInteger.Negate(whole) * m_denominator) + BigInteger.Negate(numerator);
@@ -482,7 +484,7 @@ namespace Beerendonk.Transit.Numerics
         /// <returns>The absolute value.</returns>
         public static BigRational Abs(BigRational r)
         {
-            return (r.m_numerator.Sign < 0 ? new BigRational(BigInteger.Abs(r.m_numerator), r.Denominator) : r);
+            return (r.m_numerator.Signum < 0 ? new BigRational(BigInteger.Abs(r.m_numerator), r.Denominator) : r);
         }
 
         /// <summary>
@@ -592,13 +594,13 @@ namespace Beerendonk.Transit.Numerics
         /// <exception cref="System.ArgumentException">cannot raise zero to a negative power;baseValue</exception>
         public static BigRational Pow(BigRational baseValue, BigInteger exponent)
         {
-            if (exponent.Sign == 0)
+            if (exponent.Signum == 0)
             {
                 // 0^0 -> 1
                 // n^0 -> 1
                 return BigRational.One;
             }
-            else if (exponent.Sign < 0)
+            else if (exponent.Signum < 0)
             {
                 if (baseValue == BigRational.Zero)
                 {
@@ -613,7 +615,7 @@ namespace Beerendonk.Transit.Numerics
             while (exponent > BigInteger.One)
             {
                 result = result * baseValue;
-                exponent--;
+                exponent = exponent.Subtract(BigInteger.One);
             }
 
             return result;
@@ -635,7 +637,7 @@ namespace Beerendonk.Transit.Numerics
         public static BigInteger LeastCommonDenominator(BigRational x, BigRational y)
         {
             // LCD( a/b, c/d ) == (bd) / gcd(b,d)
-            return (x.Denominator * y.Denominator) / BigInteger.GreatestCommonDivisor(x.Denominator, y.Denominator);
+            return (x.Denominator * y.Denominator) / BigIntegerExtensions.GreatestCommonDivisor(x.Denominator, y.Denominator);
         }
 
         /// <summary>
@@ -1226,7 +1228,7 @@ namespace Beerendonk.Transit.Numerics
                 m_denominator = BigInteger.One;
             }
 
-            BigInteger gcd = BigInteger.GreatestCommonDivisor(m_numerator, m_denominator);
+            BigInteger gcd = BigIntegerExtensions.GreatestCommonDivisor(m_numerator, m_denominator);
             if (gcd > BigInteger.One)
             {
                 m_numerator = m_numerator / gcd;

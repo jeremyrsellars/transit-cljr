@@ -17,7 +17,8 @@
 // limitations under the License.
 
 using System.Collections.Immutable;
-using System.Numerics;
+using clojure.lang;
+using Sellars.Transit.Alpha;
 
 namespace Beerendonk.Transit.Impl.ReadHandlers
 {

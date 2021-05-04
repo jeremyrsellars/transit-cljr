@@ -16,7 +16,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Beerendonk.Transit.Numerics;
+using Sellars.Transit.Alpha;
+using Sellars.Transit.Numerics.Alpha;
 
 namespace Beerendonk.Transit.Impl.ReadHandlers
 {

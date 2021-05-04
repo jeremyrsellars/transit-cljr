@@ -18,6 +18,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using Sellars.Transit.Alpha;
 
 namespace Beerendonk.Transit.Impl.WriteHandlers
 {
@@ -30,9 +31,19 @@ namespace Beerendonk.Transit.Impl.WriteHandlers
             this.abstractEmitter = abstractEmitter;
         }
 
-        private bool StringableKeys(dynamic d)
+        private bool StringableKeys(object d)
         {
-            foreach (var key in d.Keys)
+            System.Collections.IEnumerable keys;
+            if (d is System.Collections.IDictionary dict)
+                keys = dict.Keys;
+            else if (d is IDictionary<object, object> gdict)
+                keys = gdict.Keys;
+            else if (d is IReadOnlyDictionary<object, object> rodict)
+                keys = rodict.Keys;
+            else
+                return false; // unknown type.
+
+            foreach (var key in keys)
 	        {
                 string tag = abstractEmitter.GetTag(key);
 
@@ -63,17 +74,15 @@ namespace Beerendonk.Transit.Impl.WriteHandlers
 
         public override object Representation(object obj)
         {
-            dynamic o = obj;
-
-            if (StringableKeys(o))
+            if (StringableKeys(obj))
             {
-                return Enumerable.ToList(o);
+                return Enumerable.ToList(AbstractEmitter.CoerceKeyValuePairs(obj));
             }
             else
             {
                 var l = new List<object>();
 
-                foreach (var item in o)
+                foreach (var item in AbstractEmitter.CoerceKeyValuePairs(obj))
                 {
                     l.Add(item.Key);
                     l.Add(item.Value);

@@ -23,8 +23,12 @@ using System.IO;
 using Beerendonk.Transit.Impl;
 using Sellars.Transit.Spi.Alpha;
 using clojure.lang;
+using Sellars.Transit.Alpha;
+using Format = Sellars.Transit.Alpha.TransitFactory.Format;
+using ReaderFactory = Sellars.Transit.Cljr.Impl.ReaderFactory;
+using WriterFactory = Sellars.Transit.Cljr.Impl.WriterFactory;
 
-namespace Sellars.Transit.Alpha
+namespace Sellars.Transit.Cljr.Alpha
 {
     /// <summary>
     /// Main entry point for using transit-cljr library. Provides methods to construct
@@ -32,27 +36,6 @@ namespace Sellars.Transit.Alpha
     /// </summary>
     public class TransitFactory
     {
-        /// <summary>
-        /// Transit formats.
-        /// </summary>
-        public enum Format 
-        { 
-            /// <summary>
-            /// JSON
-            /// </summary>
-            Json, 
-
-            /// <summary>
-            /// MessagePack
-            /// </summary>
-            MsgPack, 
-
-            /// <summary>
-            /// JSON Verbose
-            /// </summary>
-            JsonVerbose 
-        }
-
         /// <summary>
         /// Creates a writer instance.
         /// </summary>
@@ -222,7 +205,7 @@ namespace Sellars.Transit.Alpha
         /// </summary>
         /// <param name="obj">A string or a symbol.</param>
         /// <returns>A symbol.</returns>
-        public static Symbol Symbol(object obj)
+        public static Symbol Symbol(object obj) 
         {
             if (obj is Symbol)
             {

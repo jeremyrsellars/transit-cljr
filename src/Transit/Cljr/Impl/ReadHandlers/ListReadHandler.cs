@@ -17,15 +17,15 @@
 // limitations under the License.
 
 using System;
-using System.Collections.Generic;
+using clojure.lang;
 using Sellars.Transit.Alpha;
 
-namespace Beerendonk.Transit.Impl.ReadHandlers
+namespace Sellars.Transit.Cljr.Impl.ReadHandlers
 {
     /// <summary>
-    /// Represents a read handler of a dictionary with composite keys.
+    /// Represents a list read handler.
     /// </summary>
-    internal class CDictionaryReadHandler : IListReadHandler
+    internal class ListReadHandler : IListReadHandler
     {
         /// <summary>
         /// Provides an <see cref="IListReader" /> that
@@ -41,13 +41,13 @@ namespace Beerendonk.Transit.Impl.ReadHandlers
         }
 
         /// <summary>
-        /// Converts a transit value to an instance of dictionary with composite keys.
+        /// Converts a transit value to an instance of a list.
         /// </summary>
         /// <param name="representation">The transit value.</param>
         /// <returns>
         /// The converted object.
         /// </returns>
-        /// <exception cref="System.NotSupportedException">This method is not supported.</exception>
+        /// <exception cref="System.NotSupportedException"></exception>
         public object FromRepresentation(object representation)
         {
             throw new NotSupportedException();
@@ -55,32 +55,19 @@ namespace Beerendonk.Transit.Impl.ReadHandlers
 
         private class ListReaderImpl : IListReader
         {
-            Dictionary<object, object> d = null;
-            object nextKey = null;
-
             public object Init()
             {
-                d = new Dictionary<object, object>();
-                return this;
+                return PersistentVector.EMPTY.asTransient();
             }
 
             public object Add(object list, object item)
             {
-                if (nextKey != null)
-                {
-                    d.Add(nextKey, item);
-                    nextKey = null;
-                }
-                else
-                {
-                    nextKey = item;
-                }
-                return this;
+                return ((ITransientCollection)list).conj(item);
             }
 
             public object Complete(object list)
             {
-                return d;
+                return ((ITransientCollection)list).persistent();
             }
         }
     }

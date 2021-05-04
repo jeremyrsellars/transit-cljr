@@ -16,33 +16,41 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Beerendonk.Transit.Impl;
 using Beerendonk.Transit.Java;
-using Beerendonk.Transit.Numerics;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Numerics;
 using System.Text;
+using clojure.lang;
+using Sellars.Transit.Alpha;
+using Sellars.Transit.Numerics.Alpha;
+using NUnit.Framework;
 
 namespace Beerendonk.Transit.Tests
 {
-    [TestClass]
+    [TestFixtureSource(typeof(FactoryImplementationAdapter), nameof(FactoryImplementationAdapter.Adapters))]
     public class TransitTest
     {
+        private FactoryImplementationAdapter adapter;
+
+        public TransitTest(FactoryImplementationAdapter adapter)
+        {
+            this.adapter = adapter;
+        }
+
         #region Reading
 
         public IReader Reader(string s)
         {
             Stream input = new MemoryStream(Encoding.Default.GetBytes(s));
-            return TransitFactory.Reader(TransitFactory.Format.Json, input);
+            return adapter.CreateReader(TransitFactory.Format.Json, input);
         }
 
-        [TestMethod]
+        [Test]
         public void TestReadString()
         {
             Assert.AreEqual("foo", Reader("\"foo\"").Read<string>());
@@ -52,7 +60,7 @@ namespace Beerendonk.Transit.Tests
             Assert.AreEqual("^foo", Reader("\"~^foo\"").Read<string>());
         }
 
-        [TestMethod]
+        [Test]
         public void TestReadBoolean()
         {
             Assert.IsTrue(Reader("\"~?t\"").Read<bool>());
@@ -63,7 +71,7 @@ namespace Beerendonk.Transit.Tests
             Assert.AreEqual(2L, d[false]);
         }
 
-        [TestMethod]
+        [Test]
         public void TestReadNull()
         {
             IReader r = Reader("\"~_\"");
@@ -71,51 +79,51 @@ namespace Beerendonk.Transit.Tests
             Assert.IsNull(v);
         }
 
-        [TestMethod]
+        [Test]
         public void TestReadKeyword()
         {
-            IKeyword v = Reader("\"~:foo\"").Read<IKeyword>();
-            Assert.AreEqual("foo", v.ToString());
+            Keyword v = Reader("\"~:foo\"").Read<Keyword>();
+            Assert.AreEqual(":foo", v.ToString());
 
             IReader r = Reader("[\"~:foo\",\"^" + (char)WriteCache.BaseCharIdx + "\",\"^" + (char)WriteCache.BaseCharIdx + "\"]");
-            IList v2 = r.Read<IList>();
-            Assert.AreEqual("foo", v2[0].ToString());
-            Assert.AreEqual("foo", v2[1].ToString());
-            Assert.AreEqual("foo", v2[2].ToString());
+            var v2 = r.Read<IEnumerable>();
+            Assert.AreEqual(":foo", RT.nth(v2, 0).ToString());
+            Assert.AreEqual(":foo", RT.nth(v2, 1).ToString());
+            Assert.AreEqual(":foo", RT.nth(v2, 2).ToString());
         }
 
-        [TestMethod]
+        [Test]
         public void TestReadInteger()
         {
             IReader r = Reader("\"~i42\"");
             long v = r.Read<long>();
-            Assert.AreEqual<long>(42L, v);
+            AssertAreEqual<long>(42L, v);
         }
 
-        [TestMethod]
+        [Test]
         public void TestReadBigInteger()
         {
             BigInteger expected = BigInteger.Parse("4256768765123454321897654321234567");
             IReader r = Reader("\"~n4256768765123454321897654321234567\"");
             BigInteger v = r.Read<BigInteger>();
-            Assert.AreEqual<BigInteger>(expected, v);
+            AssertAreEqual<BigInteger>(expected, v);
         }
 
-        [TestMethod]
+        [Test]
         public void TestReadDouble()
         {
-            Assert.AreEqual<double>(42.5D, Reader("\"~d42.5\"").Read<double>());
+            AssertAreEqual<double>(42.5D, Reader("\"~d42.5\"").Read<double>());
         }
 
-        [TestMethod]
+        [Test]
         public void TestReadSpecialNumbers()
         {
-            Assert.AreEqual<double>(double.NaN, Reader("\"~zNaN\"").Read<double>());
-            Assert.AreEqual<double>(double.PositiveInfinity, Reader("\"~zINF\"").Read<double>());
-            Assert.AreEqual<double>(double.NegativeInfinity, Reader("\"~z-INF\"").Read<double>());
+            AssertAreEqual<double>(double.NaN, Reader("\"~zNaN\"").Read<double>());
+            AssertAreEqual<double>(double.PositiveInfinity, Reader("\"~zINF\"").Read<double>());
+            AssertAreEqual<double>(double.NegativeInfinity, Reader("\"~z-INF\"").Read<double>());
         }
 
-        [TestMethod]
+        [Test]
         public void TestReadBigRational()
         {
             Assert.AreEqual(new BigRational(12.345M), Reader("\"~f12.345\"").Read<BigRational>());
@@ -128,7 +136,7 @@ namespace Beerendonk.Transit.Tests
             Assert.AreEqual(new BigRational(420.0057M), Reader("\"~f420.0057\"").Read<BigRational>());
         }
 
-        [TestMethod]
+        [Test]
         public void TestReadDateTime()
         {
             var d = new DateTime(2014, 8, 9, 10, 6, 21, 497, DateTimeKind.Local);
@@ -150,7 +158,7 @@ namespace Beerendonk.Transit.Tests
             Assert.AreEqual(expected, Reader("\"~t" + timeString + "\"").Read<DateTime>());
         }
 
-        [TestMethod]
+        [Test]
         public void TestReadGuid()
         {
             Guid guid = Guid.NewGuid();
@@ -161,7 +169,7 @@ namespace Beerendonk.Transit.Tests
             Assert.AreEqual(guid, Reader("{\"~#u\": [" + hi64 + ", " + lo64 + "]}").Read<Guid>());
         }
 
-        [TestMethod]
+        [Test]
         public void TestReadUri()
         {
             Uri expected = new Uri("http://www.foo.com");
@@ -170,15 +178,15 @@ namespace Beerendonk.Transit.Tests
             Assert.AreEqual(expected, v);
         }
 
-        [TestMethod]
+        [Test]
         public void TestReadSymbol()
         {
             IReader r = Reader("\"~$foo\"");
-            ISymbol v = r.Read<ISymbol>();
+            Symbol v = r.Read<Symbol>();
             Assert.AreEqual("foo", v.ToString());
         }
 
-        [TestMethod]
+        [Test]
         public void TestReadCharacter()
         {
             IReader r = Reader("\"~cf\"");
@@ -186,7 +194,7 @@ namespace Beerendonk.Transit.Tests
             Assert.AreEqual('f', v);
         }
 
-        [TestMethod]
+        [Test]
         public void TestReadBinary()
         {
             byte[] bytes = Encoding.ASCII.GetBytes("foobarbaz");
@@ -205,19 +213,19 @@ namespace Beerendonk.Transit.Tests
             Assert.IsTrue(same);
         }
 
-        [TestMethod]
+        [Test]
         public void TestReadUnknown()
         {
             Assert.AreEqual(TransitFactory.TaggedValue("j", "foo"), Reader("\"~jfoo\"").Read<ITaggedValue>());
-            IList<object> l = new List<object> { 1L, 2L };
+            ISeq l = RT.arrayToList(new object [] { 1L, 2L });
 
             ITaggedValue expected = TransitFactory.TaggedValue("point", l);
             ITaggedValue result = Reader("{\"~#point\":[1,2]}").Read<ITaggedValue>();
             Assert.AreEqual(expected.Tag, result.Tag);
-            CollectionAssert.AreEqual(((IList<object>)expected.Representation).ToArray(), ((IList<object>)result.Representation).ToArray());
+            CollectionAssert.AreEqual(RT.toArray(expected.Representation), RT.toArray(result.Representation));
         }
 
-        [TestMethod]
+        [Test]
         public void TestReadList()
         {
             IList l = Reader("[1, 2, 3]").Read<IList>();
@@ -230,7 +238,7 @@ namespace Beerendonk.Transit.Tests
             Assert.AreEqual(3L, l[2]);
         }
 
-        [TestMethod]
+        [Test]
         public void TestReadListWithNested()
         {
             var d = new DateTime(2014, 8, 10, 13, 34, 35);
@@ -240,23 +248,23 @@ namespace Beerendonk.Transit.Tests
 
             Assert.AreEqual(3, l.Count);
 
-            Assert.AreEqual("foo", l[0].ToString());
+            Assert.AreEqual(":foo", l[0].ToString());
             Assert.AreEqual(d, (DateTime)l[1]);
             Assert.IsTrue((bool)l[2]);
         }
 
-        [TestMethod]
+        [Test]
         public void TestReadDictionary()
         {
-            IDictionary m = Reader("{\"a\": 2, \"b\": 4}").Read<IDictionary>();
+            var m = Reader("{\"a\": 2, \"b\": 4}").Read<object>();
 
-            Assert.AreEqual(2, m.Count);
+            Assert.AreEqual(2, RT.count(m));
 
-            Assert.AreEqual(2L, m["a"]);
-            Assert.AreEqual(4L, m["b"]);
+            Assert.AreEqual(2L, RT.get(m, "a"));
+            Assert.AreEqual(4L, RT.get(m, "b"));
         }
 
-        [TestMethod]
+        [Test]
         public void TestReadDictionaryWithNested()
         {
             Guid guid = Guid.NewGuid();
@@ -265,23 +273,23 @@ namespace Beerendonk.Transit.Tests
 
             Assert.AreEqual(2, m.Count);
 
-            Assert.AreEqual("foo", m["a"].ToString());
+            Assert.AreEqual(":foo", m["a"].ToString());
             Assert.AreEqual(guid, m["b"]);
         }
 
-        [TestMethod]
+        [Test]
         public void TestReadSet()
         {
-            ISet<object> s = Reader("{\"~#set\": [1, 2, 3]}").Read<ISet<object>>();
+            var s = Reader("{\"~#set\": [1, 2, 3]}").Read<object>();
 
-            Assert.AreEqual(3, s.Count);
+            Assert.AreEqual(3, RT.count(s));
 
-            Assert.IsTrue(s.Contains(1L));
-            Assert.IsTrue(s.Contains(2L));
-            Assert.IsTrue(s.Contains(3L));
+            Assert.IsTrue(RT.IsTrue(RT.contains(s, 1L)));
+            Assert.IsTrue(RT.IsTrue(RT.contains(s, 2L)));
+            Assert.IsTrue(RT.IsTrue(RT.contains(s, 3L)));
         }
 
-        [TestMethod]
+        [Test]
         public void TestReadEnumerable()
         {
             IEnumerable l = Reader("{\"~#list\": [1, 2, 3]}").Read<IEnumerable>();
@@ -295,17 +303,17 @@ namespace Beerendonk.Transit.Tests
             Assert.AreEqual(3L, lo.Skip(2).First());
         }
 
-        [TestMethod]
+        [Test]
         public void TestReadRatio()
         {
-            IRatio r = Reader("{\"~#ratio\": [\"~n1\",\"~n2\"]}").Read<IRatio>();
+            Ratio r = Reader("{\"~#ratio\": [\"~n1\",\"~n2\"]}").Read<Ratio>();
 
-            Assert.AreEqual(BigInteger.One, r.Numerator);
-            Assert.AreEqual(BigInteger.One + 1, r.Denominator);
-            Assert.AreEqual(0.5d, r.GetValue(), 0.01d);
+            Assert.AreEqual(BigInteger.One, r.numerator);
+            Assert.AreEqual(BigInteger.One + 1, r.denominator);
+            Assert.AreEqual(0.5d, r.ToDouble(null), 0.01d); // The null FormatProvider might be wrong.
         }
 
-        [TestMethod]
+        [Test]
         public void TestReadCDictionary()
         {
             IDictionary m = Reader("{\"~#cmap\": [{\"~#ratio\":[\"~n1\",\"~n2\"]},1,{\"~#list\":[1,2,3]},2]}").Read<IDictionary>();
@@ -317,8 +325,8 @@ namespace Beerendonk.Transit.Tests
                 if ((long)e.Value == 1L)
                 {
                     Ratio r = (Ratio)e.Key;
-                    Assert.AreEqual(new BigInteger(1), r.Numerator);
-                    Assert.AreEqual(new BigInteger(2), r.Denominator);
+                    Assert.AreEqual(new BigInteger(+1, 1), r.numerator);
+                    Assert.AreEqual(new BigInteger(+1, 2), r.denominator);
                 }
                 else
                 {
@@ -333,7 +341,7 @@ namespace Beerendonk.Transit.Tests
             }
         }
 
-        [TestMethod]
+        [Test]
         public void TestReadSetTagAsString()
         {
             object o = Reader("{\"~~#set\": [1, 2, 3]}").Read<object>();
@@ -341,7 +349,7 @@ namespace Beerendonk.Transit.Tests
             Assert.IsTrue(o is IDictionary);
         }
 
-        [TestMethod]
+        [Test]
         public void TestReadMany()
         {
             IReader r;
@@ -351,7 +359,7 @@ namespace Beerendonk.Transit.Tests
             BigInteger expected = BigInteger.Parse("4256768765123454321897654321234567");
             r = Reader("4256768765123454321897654321234567");
             BigInteger v = r.Read<BigInteger>();
-            Assert.AreEqual<BigInteger>(expected, v);
+            AssertAreEqual<BigInteger>(expected, v);
             */
 
             r = Reader("true null false \"foo\" 42.2 42");
@@ -363,7 +371,7 @@ namespace Beerendonk.Transit.Tests
             Assert.AreEqual(42L, Reader("42").Read<long>());
         }
 
-        [TestMethod]
+        [Test]
         public void TestReadCache()
         {
             ReadCache rc = new ReadCache();
@@ -383,15 +391,15 @@ namespace Beerendonk.Transit.Tests
             Assert.AreEqual("abc", rc.CacheRead("abc", true));
         }
 
-        [TestMethod]
+        [Test]
         public void TestReadIdentity()
         {
             IReader r = Reader("\"~\\'42\"");
             string v = r.Read<string>();
-            Assert.AreEqual<string>("42", v);
+            AssertAreEqual<string>("42", v);
         }
 
-        [TestMethod]
+        [Test]
         public void TestReadLink()
         {
             IReader r = Reader("[\"~#link\" , {\"href\": \"~rhttp://www.Beerendonk.nl\", \"rel\": \"a-rel\", \"name\": \"a-name\", \"prompt\": \"a-prompt\", \"render\": \"link or image\"}]");
@@ -411,7 +419,7 @@ namespace Beerendonk.Transit.Tests
         {
             using (Stream output = new MemoryStream())
             {
-                IWriter<object> w = TransitFactory.Writer<object>(format, output, customHandlers);
+                IWriter<object> w = adapter.CreateCustomWriter(format, output, customHandlers);
                 w.Write(obj);
 
                 output.Position = 0;
@@ -448,7 +456,7 @@ namespace Beerendonk.Transit.Tests
                 return false;
         }
 
-        [TestMethod]
+        [Test]
         public void TestRoundTrip()
         {
             object inObject = true;
@@ -458,7 +466,7 @@ namespace Beerendonk.Transit.Tests
 
             using (Stream output = new MemoryStream())
             {
-                IWriter<object> w = TransitFactory.Writer<object>(TransitFactory.Format.JsonVerbose, output);
+                IWriter<object> w = adapter.CreateWriter(TransitFactory.Format.JsonVerbose, output);
                 w.Write(inObject);
 
                 output.Position = 0;
@@ -469,7 +477,7 @@ namespace Beerendonk.Transit.Tests
             byte[] buffer = Encoding.ASCII.GetBytes(s);
             using (Stream input = new MemoryStream(buffer))
             {
-                IReader reader = TransitFactory.Reader(TransitFactory.Format.Json, input);
+                IReader reader = adapter.CreateReader(TransitFactory.Format.Json, input);
                 outObject = reader.Read<object>();
             }
 
@@ -486,20 +494,20 @@ namespace Beerendonk.Transit.Tests
             return "{\"~#'\":" + value + "}";
         }
 
-        [TestMethod]
+        [Test]
         public void TestWriteNull()
         {
             Assert.AreEqual(ScalarVerbose("null"), WriteJsonVerbose(null));
             Assert.AreEqual(Scalar("null"), WriteJson(null));
         }
 
-        [TestMethod]
+        [Test]
         public void TestWriteKeyword()
         {
             Assert.AreEqual(ScalarVerbose("\"~:foo\""), WriteJsonVerbose(TransitFactory.Keyword("foo")));
             Assert.AreEqual(Scalar("\"~:foo\""), WriteJson(TransitFactory.Keyword("foo")));
 
-            IList l = new IKeyword[] 
+            IList l = new Keyword[] 
             {
                 TransitFactory.Keyword("foo"),
                 TransitFactory.Keyword("foo"),
@@ -509,21 +517,19 @@ namespace Beerendonk.Transit.Tests
             Assert.AreEqual("[\"~:foo\",\"^0\",\"^0\"]", WriteJson(l));
         }
 
-        [TestMethod]
-        [ExpectedException(typeof(NotSupportedException))]
-        public void TestWriteObjectJson()
+        [Test]
+        public void TestWriteObjectJson() => Assert.Throws<NotSupportedException>(() =>
         {
             WriteJson(new object());
-        }
+        });
 
-        [TestMethod]
-        [ExpectedException(typeof(NotSupportedException))]
-        public void TestWriteObjectJsonVerbose()
+        [Test]
+        public void TestWriteObjectJsonVerbose() => Assert.Throws<NotSupportedException>(() =>
         {
             WriteJsonVerbose(new object());
-        }
+        });
 
-        [TestMethod]
+        [Test]
         public void TestWriteString()
         {
             Assert.AreEqual(ScalarVerbose("\"foo\""), WriteJsonVerbose("foo"));
@@ -532,7 +538,7 @@ namespace Beerendonk.Transit.Tests
             Assert.AreEqual(Scalar("\"~~foo\""), WriteJson("~foo"));
         }
 
-        [TestMethod]
+        [Test]
         public void TestWriteBoolean()
         {
             Assert.AreEqual(ScalarVerbose("true"), WriteJsonVerbose(true));
@@ -550,7 +556,7 @@ namespace Beerendonk.Transit.Tests
             Assert.AreEqual("[\"^ \",\"~?f\",1]", WriteJson(d2));
         }
 
-        [TestMethod]
+        [Test]
         public void TestWriteInteger()
         {
             Assert.AreEqual(ScalarVerbose("42"), WriteJsonVerbose(42));
@@ -563,7 +569,7 @@ namespace Beerendonk.Transit.Tests
             Assert.AreEqual(ScalarVerbose("\"~n4256768765123454321897654321234567\""), WriteJsonVerbose(BigInteger.Parse("4256768765123454321897654321234567")));
         }
 
-        [TestMethod]
+        [Test]
         public void TestWriteFloatDouble()
         {
             Assert.AreEqual(ScalarVerbose("42.5"), WriteJsonVerbose(42.5));
@@ -571,7 +577,7 @@ namespace Beerendonk.Transit.Tests
             Assert.AreEqual(ScalarVerbose("42.5"), WriteJsonVerbose(42.5D));
         }
 
-        [TestMethod]
+        [Test]
         public void TestSpecialNumbers()
         {
             Assert.AreEqual(Scalar("\"~zNaN\""), WriteJson(double.NaN));
@@ -591,16 +597,16 @@ namespace Beerendonk.Transit.Tests
             Assert.AreEqual(ScalarVerbose("\"~z-INF\""), WriteJsonVerbose(float.NegativeInfinity));
         }
 
-        [TestMethod]
+        [Test]
         public void TestWriteBigDecimal()
         {
-            Assert.Inconclusive();
+            //Assert.Inconclusive();
 
             // TODO
-            //Assert.AreEqual(ScalarVerbose("\"~f42.5\""), WriteJsonVerbose(new BigRational(42.5)));
+            Assert.AreEqual(ScalarVerbose("\"~f42.5\""), WriteJsonVerbose(new BigDecimal(new BigInteger(1, 425), -1)));
         }
 
-        [TestMethod]
+        [Test]
         public void TestWriteDateTime()
         {
             var d = DateTime.Now;
@@ -610,14 +616,14 @@ namespace Beerendonk.Transit.Tests
             Assert.AreEqual(Scalar("\"~m" + dateLong + "\""), WriteJson(d));
         }
 
-        [TestMethod]
+        [Test]
         public void TestWriteUUID()
         {
             Guid guid = Guid.NewGuid();
             Assert.AreEqual(ScalarVerbose("\"~u" + guid.ToString() + "\""), WriteJsonVerbose(guid));
         }
 
-        [TestMethod]
+        [Test]
         public void TestWriteURI()
         {
             Uri uri = new Uri("http://www.foo.com/");
@@ -625,7 +631,7 @@ namespace Beerendonk.Transit.Tests
             Assert.AreEqual(ScalarVerbose("\"~rhttp://www.foo.com/\""), WriteJsonVerbose(uri));
         }
 
-        [TestMethod]
+        [Test]
         public void TestWriteBinary()
         {
             byte[] bytes = Encoding.ASCII.GetBytes("foobarbaz");
@@ -634,13 +640,13 @@ namespace Beerendonk.Transit.Tests
             Assert.AreEqual(ScalarVerbose("\"~b" + encoded + "\""), WriteJsonVerbose(bytes));
         }
 
-        [TestMethod]
+        [Test]
         public void TestWriteSymbol()
         {
             Assert.AreEqual(ScalarVerbose("\"~$foo\""), WriteJsonVerbose(TransitFactory.Symbol("foo")));
         }
 
-        [TestMethod]
+        [Test]
         public void TestWriteList()
         {
             IList<int> l = new List<int> { 1, 2, 3 };
@@ -649,7 +655,7 @@ namespace Beerendonk.Transit.Tests
             Assert.AreEqual("[1,2,3]", WriteJson(l));
         }
 
-        [TestMethod]
+        [Test]
         public void TestWritePrimitiveArrays()
         {
             int[] ints = { 1, 2 };
@@ -674,7 +680,7 @@ namespace Beerendonk.Transit.Tests
             Assert.AreEqual("[\"~c5\",\"~c/\"]", WriteJsonVerbose(chars));
         }
 
-        [TestMethod]
+        [Test]
         public void TestWriteDictionary()
         {
             IDictionary<string, int> d = new Dictionary<string, int> { {"foo", 1}, {"bar", 2} };
@@ -683,7 +689,7 @@ namespace Beerendonk.Transit.Tests
             Assert.AreEqual("[\"^ \",\"foo\",1,\"bar\",2]", WriteJson(d));
         }
 
-        [TestMethod]
+        [Test]
         public void TestWriteEmptyDictionary()
         {
             IDictionary<object, object> d = new Dictionary<object, object>();
@@ -691,7 +697,7 @@ namespace Beerendonk.Transit.Tests
             Assert.AreEqual("[\"^ \"]", WriteJson(d));
         }
 
-        [TestMethod]
+        [Test]
         public void TestWriteSet()
         {
             ISet<string> s = new HashSet<string> { "foo", "bar" };
@@ -700,7 +706,7 @@ namespace Beerendonk.Transit.Tests
             Assert.AreEqual("[\"~#set\",[\"foo\",\"bar\"]]", WriteJson(s));
         }
 
-        [TestMethod]
+        [Test]
         public void TestWriteEmptySet()
         {
             ISet<object> s = new HashSet<object>();
@@ -708,7 +714,7 @@ namespace Beerendonk.Transit.Tests
             Assert.AreEqual("[\"~#set\",[]]", WriteJson(s));
         }
 
-        [TestMethod]
+        [Test]
         public void TestWriteEnumerable()
         {
             ICollection<string> c = new LinkedList<string>();
@@ -719,7 +725,7 @@ namespace Beerendonk.Transit.Tests
             Assert.AreEqual("[\"~#list\",[\"foo\",\"bar\"]]", WriteJson(e));
         }
 
-        [TestMethod]
+        [Test]
         public void TestWriteEmptyEnumerable()
         {
             IEnumerable<string> c = new LinkedList<string>();
@@ -727,31 +733,31 @@ namespace Beerendonk.Transit.Tests
             Assert.AreEqual("[\"~#list\",[]]", WriteJson(c));
         }
 
-        [TestMethod]
+        [Test]
         public void TestWriteCharacter()
         {
             Assert.AreEqual(ScalarVerbose("\"~cf\""), WriteJsonVerbose('f'));
         }
 
-        [TestMethod]
+        [Test]
         public void TestWriteRatio()
         {
-            IRatio r = new Ratio(BigInteger.One, new BigInteger(2));
+            Ratio r = new Ratio(BigInteger.One, new BigInteger(+1, 2));
             Assert.AreEqual("{\"~#ratio\":[\"~n1\",\"~n2\"]}", WriteJsonVerbose(r));
             Assert.AreEqual("[\"~#ratio\",[\"~n1\",\"~n2\"]]", WriteJson(r));
         }
 
-        [TestMethod]
+        [Test]
         public void TestWriteCDictionary()
         {
-            IRatio r = new Ratio(BigInteger.One, new BigInteger(2));
+            Ratio r = new Ratio(BigInteger.One, new BigInteger(+1, 2));
             IDictionary<object, object> d = new Dictionary<object, object>();
             d.Add(r, 1);
             Assert.AreEqual("{\"~#cmap\":[{\"~#ratio\":[\"~n1\",\"~n2\"]},1]}", WriteJsonVerbose(d));
             Assert.AreEqual("[\"~#cmap\",[[\"~#ratio\",[\"~n1\",\"~n2\"]],1]]", WriteJson(d));
         }
 
-        [TestMethod]
+        [Test]
         public void TestWriteCache()
         {
             WriteCache wc = new WriteCache(true);
@@ -771,7 +777,7 @@ namespace Beerendonk.Transit.Tests
             Assert.AreEqual("abc", wc.CacheWrite("abc", true));
         }
 
-        [TestMethod]
+        [Test]
         public void TestWriteCacheDisabled()
         {
             WriteCache wc = new WriteCache(false);
@@ -781,7 +787,7 @@ namespace Beerendonk.Transit.Tests
             Assert.AreEqual("foobar", wc.CacheWrite("foobar", true));
         }
 
-        [TestMethod]
+        [Test]
         public void TestWriteUnknown()
         {
             var l = new List<object>();
@@ -795,7 +801,7 @@ namespace Beerendonk.Transit.Tests
             Assert.AreEqual("{\"~#point\":[1,2]}", WriteJsonVerbose(TransitFactory.TaggedValue("point", l2)));
         }
 
-        [TestMethod]
+        [Test]
         public void TestWriteWithCustomHandler()
         {
             Mock<IWriteHandler> mock = new Mock<IWriteHandler>();
@@ -820,8 +826,8 @@ namespace Beerendonk.Transit.Tests
 
         #endregion
 
-        [TestMethod]
-        public void TestUseIKeywordAsDictionaryKey()
+        [Test]
+        public void TestUseKeywordAsDictionaryKey()
         {
             IDictionary<object, object> d = new Dictionary<object, object>();
             d.Add(TransitFactory.Keyword("foo"), 1);
@@ -835,8 +841,8 @@ namespace Beerendonk.Transit.Tests
             Assert.AreEqual(4, d["bar"]);
         }
 
-        [TestMethod]
-        public void TestUseISymbolAsDictionaryKey()
+        [Test]
+        public void TestUseSymbolAsDictionaryKey()
         {
             IDictionary<object, object> d = new Dictionary<object, object>();
             d.Add(TransitFactory.Symbol("foo"), 1);
@@ -850,14 +856,14 @@ namespace Beerendonk.Transit.Tests
             Assert.AreEqual(4, d["bar"]);
         }
 
-        [TestMethod]
+        [Test]
         public void TestKeywordEquality()
         {
             string s = "foo";
 
-            IKeyword k1 = TransitFactory.Keyword("foo");
-            IKeyword k2 = TransitFactory.Keyword("!foo".Substring(1));
-            IKeyword k3 = TransitFactory.Keyword("bar");
+            Keyword k1 = TransitFactory.Keyword("foo");
+            Keyword k2 = TransitFactory.Keyword("!foo".Substring(1));
+            Keyword k3 = TransitFactory.Keyword("bar");
 
             Assert.AreEqual(k1, k2);
             Assert.AreEqual(k2, k1);
@@ -867,15 +873,15 @@ namespace Beerendonk.Transit.Tests
             Assert.IsFalse(k1.Equals(s));
         }
 
-        [TestMethod]
+        [Test]
         public void TestKeywordHashCode()
         {
             string s = "foo";
 
-            IKeyword k1 = TransitFactory.Keyword("foo");
-            IKeyword k2 = TransitFactory.Keyword("!foo".Substring(1));
-            IKeyword k3 = TransitFactory.Keyword("bar");
-            ISymbol symbol = TransitFactory.Symbol("bar");
+            Keyword k1 = TransitFactory.Keyword("foo");
+            Keyword k2 = TransitFactory.Keyword("!foo".Substring(1));
+            Keyword k3 = TransitFactory.Keyword("bar");
+            Symbol symbol = TransitFactory.Symbol("bar");
 
             Assert.AreEqual(k1.GetHashCode(), k2.GetHashCode());
             Assert.IsFalse(k3.GetHashCode() == k1.GetHashCode());
@@ -883,11 +889,11 @@ namespace Beerendonk.Transit.Tests
             Assert.IsFalse(s.GetHashCode() == k1.GetHashCode());
         }
 
-        [TestMethod]
+        [Test]
         public void TestKeywordComparator()
         {
 
-            List<IKeyword> l = new List<IKeyword> {
+            List<Keyword> l = new List<Keyword> {
                 { TransitFactory.Keyword("bbb") },
                 { TransitFactory.Keyword("ccc") },
                 { TransitFactory.Keyword("abc") },
@@ -895,20 +901,20 @@ namespace Beerendonk.Transit.Tests
 
             l.Sort();
 
-            Assert.AreEqual("abc", l[0].ToString());
-            Assert.AreEqual("bbb", l[1].ToString());
-            Assert.AreEqual("ccc", l[2].ToString());
-            Assert.AreEqual("dab", l[3].ToString());
+            Assert.AreEqual(":abc", l[0].ToString());
+            Assert.AreEqual(":bbb", l[1].ToString());
+            Assert.AreEqual(":ccc", l[2].ToString());
+            Assert.AreEqual(":dab", l[3].ToString());
         }
 
-        [TestMethod]
+        [Test]
         public void TestSymbolEquality()
         {
             string s = "foo";
 
-            ISymbol sym1 = TransitFactory.Symbol("foo");
-            ISymbol sym2 = TransitFactory.Symbol("!foo".Substring(1));
-            ISymbol sym3 = TransitFactory.Symbol("bar");
+            Symbol sym1 = TransitFactory.Symbol("foo");
+            Symbol sym2 = TransitFactory.Symbol("!foo".Substring(1));
+            Symbol sym3 = TransitFactory.Symbol("bar");
 
             Assert.AreEqual(sym1, sym2);
             Assert.AreEqual(sym2, sym1);
@@ -918,15 +924,15 @@ namespace Beerendonk.Transit.Tests
             Assert.IsFalse(sym1.Equals(s));
         }
 
-        [TestMethod]
+        [Test]
         public void TestSymbolHashCode()
         {
             string s = "foo";
 
-            ISymbol sym1 = TransitFactory.Symbol("foo");
-            ISymbol sym2 = TransitFactory.Symbol("!foo".Substring(1));
-            ISymbol sym3 = TransitFactory.Symbol("bar");
-            IKeyword keyword = TransitFactory.Keyword("bar");
+            Symbol sym1 = TransitFactory.Symbol("foo");
+            Symbol sym2 = TransitFactory.Symbol("!foo".Substring(1));
+            Symbol sym3 = TransitFactory.Symbol("bar");
+            Keyword keyword = TransitFactory.Keyword("bar");
 
             Assert.AreEqual(sym1.GetHashCode(), sym2.GetHashCode());
             Assert.IsFalse(sym3.GetHashCode() == sym1.GetHashCode());
@@ -934,11 +940,11 @@ namespace Beerendonk.Transit.Tests
             Assert.IsFalse(s.GetHashCode() == sym1.GetHashCode());
         }
 
-        [TestMethod]
+        [Test]
         public void TestSymbolComparator()
         {
 
-            List<ISymbol> l = new List<ISymbol> {
+            List<Symbol> l = new List<Symbol> {
                 { TransitFactory.Symbol("bbb") },
                 { TransitFactory.Symbol("ccc") },
                 { TransitFactory.Symbol("abc") },
@@ -952,7 +958,7 @@ namespace Beerendonk.Transit.Tests
             Assert.AreEqual("dab", l[3].ToString());
         }
 
-        [TestMethod]
+        [Test]
         public void TestDictionaryWithEscapedKey()
         {
             var d1 = new Dictionary<object, object> { { "~Gfoo", 20L } };
@@ -963,7 +969,7 @@ namespace Beerendonk.Transit.Tests
             Assert.IsTrue(d2["~Gfoo"].Equals(20L));
         }
 
-        [TestMethod]
+        [Test]
         public void TestLink()
         {
             ILink l1 = TransitFactory.Link("http://google.com/", "search", "name", "link", "prompt");
@@ -976,11 +982,17 @@ namespace Beerendonk.Transit.Tests
             Assert.AreEqual("prompt", l2.Prompt);
         }
 
-        [TestMethod]
+        [Test]
         public void TestEmptySet()
         {
             string str = WriteJson(new HashSet<object>());
-            Assert.IsInstanceOfType(Reader(str).Read<ISet<object>>(), typeof(ISet<object>));
+            Assert.IsInstanceOf(adapter.SetType, Reader(str).Read<object>());
+        }
+
+        // The point of this method is to force the input types.
+        private static void AssertAreEqual<T>(T expected, T actual)
+        {
+            Assert.AreEqual(expected, actual);
         }
     }
 }

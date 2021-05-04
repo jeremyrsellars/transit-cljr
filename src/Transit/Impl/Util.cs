@@ -17,6 +17,8 @@
 // limitations under the License.
 
 using System.Text;
+using Sellars.Transit.Alpha;
+
 namespace Beerendonk.Transit.Impl
 {
     internal static class Util

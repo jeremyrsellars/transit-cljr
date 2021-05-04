@@ -16,10 +16,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Collections.Immutable;
 using Newtonsoft.Json;
 using Beerendonk.Transit.Extensions;
-using System;
-using System.Collections.Immutable;
+using Sellars.Transit.Alpha;
 
 namespace Beerendonk.Transit.Impl
 {
@@ -56,7 +56,7 @@ namespace Beerendonk.Transit.Impl
             //try {
                 val = jp.Value;
             //} catch(IOException e) {
-            //    val = new BigInteger(jp.getText());
+            //    val = new BigInteger(1, jp.getText());
             //}
 
             return val;

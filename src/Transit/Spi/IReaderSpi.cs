@@ -16,7 +16,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace Beerendonk.Transit.Spi
+using Sellars.Transit.Alpha;
+
+namespace Sellars.Transit.Spi.Alpha
 {
     /// <summary>
     ///  Interface for providing custom <see cref="IDictionaryReader"/> and 

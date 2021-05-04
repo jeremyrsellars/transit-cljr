@@ -17,14 +17,15 @@
 // limitations under the License.
 
 using Newtonsoft.Json;
-using Beerendonk.Transit.Impl.ReadHandlers;
 using System;
 using System.Collections.Immutable;
 using System.IO;
 using Sellars.Transit.Alpha;
 using Sellars.Transit.Spi.Alpha;
+using Beerendonk.Transit.Impl;
+using Beerendonk.Transit.Impl.ReadHandlers;
 
-namespace Beerendonk.Transit.Impl
+namespace Sellars.Transit.Cljr.Impl
 {
     /// <summary>
     /// Represents a reader factory.
@@ -55,9 +56,9 @@ namespace Beerendonk.Transit.Impl
             builder.Add("u", new GuidReadHandler());
             builder.Add("b", new BinaryReadHandler());
             builder.Add("\'", new IdentityReadHandler());
-            builder.Add("set", new SetReadHandler());
-            builder.Add("list", new ListReadHandler());
-            builder.Add("ratio", new RatioReadHandler());
+            builder.Add("set", new ReadHandlers.SetReadHandler());
+            builder.Add("list", new ReadHandlers.ListReadHandler());
+            builder.Add("ratio", new ReadHandlers.RatioReadHandler());
             builder.Add("cmap", new CDictionaryReadHandler());
             builder.Add("link", new LinkReadHandler());
 

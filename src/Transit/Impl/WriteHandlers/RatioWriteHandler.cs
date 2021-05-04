@@ -16,7 +16,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Numerics;
+using clojure.lang;
 
 namespace Beerendonk.Transit.Impl.WriteHandlers
 {
@@ -29,10 +29,10 @@ namespace Beerendonk.Transit.Impl.WriteHandlers
 
         public override object Representation(object obj)
         {
-            IRatio r = (IRatio)obj;
+            Ratio r = (Ratio)obj;
             BigInteger[] l = new BigInteger[2];
-            l[0] = r.Numerator;
-            l[1] = r.Denominator;
+            l[0] = r.numerator;
+            l[1] = r.denominator;
 
             return l;
         }

@@ -14,7 +14,7 @@
 
 using System;
 
-namespace Beerendonk.Transit
+namespace Sellars.Transit.Alpha
 {
     /// <summary>
     /// Class for Transit exceptions.

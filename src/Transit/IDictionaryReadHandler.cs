@@ -16,7 +16,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace Beerendonk.Transit
+namespace Sellars.Transit.Alpha
 {
     /// <summary>
     /// Provides a <see cref="IDictionaryReader"/> to Transit 

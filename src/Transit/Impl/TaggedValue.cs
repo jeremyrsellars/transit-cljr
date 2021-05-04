@@ -16,12 +16,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using Sellars.Transit.Alpha;
+
 namespace Beerendonk.Transit.Impl
 {
     /// <summary>
     /// Represents a tagged value.
     /// </summary>
-    internal class TaggedValue : ITaggedValue 
+    internal class TaggedValue : ITaggedValue
     {
         private readonly string tag;
         private readonly object representation;

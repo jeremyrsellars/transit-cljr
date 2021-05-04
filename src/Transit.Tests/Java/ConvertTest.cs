@@ -12,16 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Beerendonk.Transit.Java;
 using System;
+using NUnit.Framework;
 
 namespace Beerendonk.Transit.Java.Tests
 {
-    [TestClass]
+    [TestFixture]
     public class ConvertTest
     {
-        [TestMethod]
+        [Test]
         public void TestFromJavaTime()
         {
             var expected = new DateTimeOffset(new DateTime(2014, 8, 15, 13, 25, 37, 481, DateTimeKind.Utc)).LocalDateTime;
@@ -31,7 +30,7 @@ namespace Beerendonk.Transit.Java.Tests
             Assert.AreEqual(DateTimeKind.Local, result.Kind);
         }
 
-        [TestMethod]
+        [Test]
         public void TestFromJavaTimeToUtc()
         {
             var expected = new DateTime(2014, 8, 15, 13, 25, 37, 481, DateTimeKind.Utc);
@@ -41,7 +40,7 @@ namespace Beerendonk.Transit.Java.Tests
             Assert.AreEqual(DateTimeKind.Utc, result.Kind);
         }
 
-        [TestMethod]
+        [Test]
         public void TestLocalToJavaTime()
         {
             var expected = 1407575935427L;
@@ -50,7 +49,7 @@ namespace Beerendonk.Transit.Java.Tests
             Assert.AreEqual(expected, result);
         }
 
-        [TestMethod]
+        [Test]
         public void TestUtcToJavaTime()
         {
             var expected = 1407575935427L;

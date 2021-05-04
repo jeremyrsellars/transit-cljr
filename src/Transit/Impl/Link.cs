@@ -18,6 +18,7 @@
 
 using System;
 using System.Collections.Generic;
+using Sellars.Transit.Alpha;
 
 namespace Beerendonk.Transit.Impl
 {

@@ -16,7 +16,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Beerendonk.Transit.Java;
+using Sellars.Transit.Alpha;
 using System;
 
 namespace Beerendonk.Transit.Impl.ReadHandlers

@@ -16,36 +16,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using System.Numerics;
+using clojure.lang;
 
-namespace Beerendonk.Transit
+namespace TransitCljr
 {
-    /// <summary>
-    /// Represents a ratio using BigIntegers.
-    /// </summary>
-    public interface IRatio : IComparable, IComparable<IRatio>, IEquatable<IRatio>
+    internal static class BigIntegerExtensions
     {
-        /// <summary>
-        /// The value of the ratio as double.
-        /// </summary>
-        /// <returns>A double.</returns>
-        Double GetValue();
+        public static BigInteger GreatestCommonDivisor(BigInteger a, BigInteger b)
+        {
+            while (!b.IsZero)
+            {
+                var mod = a.Mod(b);
+                a = b;
+                b = mod;
+            }
 
-        /// <summary>
-        /// Gets the numerator.
-        /// </summary>
-        /// <value>
-        /// The numerator.
-        /// </value>
-        BigInteger Numerator { get; }
-
-        /// <summary>
-        /// Gets the denominator.
-        /// </summary>
-        /// <value>
-        /// The denominator.
-        /// </value>
-        BigInteger Denominator { get; }
+            return a;
+        }
     }
 }

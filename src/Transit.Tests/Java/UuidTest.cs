@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Beerendonk.Transit.Java;
+using NUnit.Framework;
 using System;
 
 namespace Beerendonk.Transit.Tests.Java
 {
-    [TestClass]
+    [TestFixture]
     public class UuidTest
     {
-        [TestMethod]
+        [Test]
         public void TestConstructor()
         {
             var uuid = new Uuid(1, 2);
@@ -30,7 +30,7 @@ namespace Beerendonk.Transit.Tests.Java
             Assert.AreEqual(2, uuid.LeastSignificantBits);
         }
 
-        [TestMethod]
+        [Test]
         public void ShouldNotEqualNull()
         {
             var uuid = new Uuid(1, 2);
@@ -38,7 +38,7 @@ namespace Beerendonk.Transit.Tests.Java
             Assert.IsFalse(uuid.Equals(null));
         }
 
-        [TestMethod]
+        [Test]
         public void ShouldNotEqualOtherType()
         {
             var uuid = new Uuid(1, 2);
@@ -46,7 +46,7 @@ namespace Beerendonk.Transit.Tests.Java
             Assert.IsFalse(uuid.Equals(new object()));
         }
 
-        [TestMethod]
+        [Test]
         public void ShouldEqualSimilarUuidObject()
         {
             var uuid = new Uuid(1, 2);
@@ -55,7 +55,7 @@ namespace Beerendonk.Transit.Tests.Java
             Assert.IsTrue(uuid.Equals(other));
         }
 
-        [TestMethod]
+        [Test]
         public void ShouldNotEqualOtherUuidObject()
         {
             var uuid = new Uuid(1, 2);
@@ -64,7 +64,7 @@ namespace Beerendonk.Transit.Tests.Java
             Assert.IsFalse(uuid.Equals(other));
         }
 
-        [TestMethod]
+        [Test]
         public void ShouldEqualSimilarUuid()
         {
             var uuid = new Uuid(1, 2);
@@ -72,7 +72,7 @@ namespace Beerendonk.Transit.Tests.Java
             Assert.IsTrue(uuid.Equals(new Uuid(1, 2)));
         }
 
-        [TestMethod]
+        [Test]
         public void ShouldNotEqualOtherUuid()
         {
             var uuid = new Uuid(1, 2);
@@ -80,7 +80,7 @@ namespace Beerendonk.Transit.Tests.Java
             Assert.IsFalse(uuid.Equals(new Uuid(3, 4)));
         }
 
-        [TestMethod]
+        [Test]
         public void OperationOverloadEqual_ShouldEqualSimilarUuid()
         {
             var uuid = new Uuid(1, 2);
@@ -88,7 +88,7 @@ namespace Beerendonk.Transit.Tests.Java
             Assert.IsTrue(uuid == new Uuid(1, 2));
         }
 
-        [TestMethod]
+        [Test]
         public void OperationOverloadEqual_ShouldNotEqualOtherUuid()
         {
             var uuid = new Uuid(1, 2);
@@ -96,7 +96,7 @@ namespace Beerendonk.Transit.Tests.Java
             Assert.IsFalse(uuid == new Uuid(3, 4));
         }
 
-        [TestMethod]
+        [Test]
         public void OperationOverloadUnequal_ShouldUnequalOtherUuid()
         {
             var uuid = new Uuid(1, 2);
@@ -104,7 +104,7 @@ namespace Beerendonk.Transit.Tests.Java
             Assert.IsTrue(uuid != new Uuid(3, 4));
         }
 
-        [TestMethod]
+        [Test]
         public void OperationOverloadUnequal_ShouldNotUnequalSimilarUuid()
         {
             var uuid = new Uuid(1, 2);
@@ -112,7 +112,7 @@ namespace Beerendonk.Transit.Tests.Java
             Assert.IsFalse(uuid != new Uuid(1, 2));
         }
 
-        [TestMethod]
+        [Test]
         public void HashCodeShouldEqualGuidHashCode()
         {
             var guid = Guid.NewGuid();
@@ -120,7 +120,7 @@ namespace Beerendonk.Transit.Tests.Java
             Assert.AreEqual(guid.GetHashCode(), ((Uuid)guid).GetHashCode());
         }
 
-        [TestMethod]
+        [Test]
         public void ConvertToGuidOfDefaultUuidShouldReturnDefaultGuid()
         {
             var uuid = default(Uuid);
@@ -128,7 +128,7 @@ namespace Beerendonk.Transit.Tests.Java
             Assert.AreEqual(default(Guid), (Guid)uuid);
         }
 
-        [TestMethod]
+        [Test]
         public void ConvertToGuidShouldReturnCorrectGuid()
         {
             var uuid = new Uuid(-1714729031470661412L, -8577612382363445748L);
@@ -136,7 +136,7 @@ namespace Beerendonk.Transit.Tests.Java
             Assert.AreEqual(new Guid("e8340f07-e924-40dc-88f6-32fc003c160c"), (Guid)uuid);
         }
 
-        [TestMethod]
+        [Test]
         public void ConvertToUuidOfDefaultGuidShouldReturnDefaultUuid()
         {
             var guid = default(Guid);
@@ -144,7 +144,7 @@ namespace Beerendonk.Transit.Tests.Java
             Assert.AreEqual(default(Uuid), (Uuid)guid);
         }
 
-        [TestMethod]
+        [Test]
         public void ConvertToUuidShouldReturnCorrectUuid()
         {
             var guid = new Guid("e8340f07-e924-40dc-88f6-32fc003c160c");
@@ -155,7 +155,7 @@ namespace Beerendonk.Transit.Tests.Java
             Assert.AreEqual(-8577612382363445748L, uuid.LeastSignificantBits);
         }
 
-        [TestMethod]
+        [Test]
         public void ToStringShouldReturnCorrectString()
         {
             var uuid = new Uuid(-1714729031470661412L, -8577612382363445748L);
@@ -163,7 +163,7 @@ namespace Beerendonk.Transit.Tests.Java
             Assert.AreEqual("e8340f07-e924-40dc-88f6-32fc003c160c", uuid.ToString());
         }
 
-        [TestMethod]
+        [Test]
         public void FromStringShouldReturnCorrectUuid()
         {
             var uuid = Uuid.FromString("e8340f07-e924-40dc-88f6-32fc003c160c");

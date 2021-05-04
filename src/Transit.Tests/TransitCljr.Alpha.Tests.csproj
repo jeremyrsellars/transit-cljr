@@ -1,0 +1,37 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+    <TargetFrameworks>net461</TargetFrameworks>
+		<NeutralLanguage></NeutralLanguage>
+		<RootNamespace>Transit</RootNamespace>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)'=='Debug'">
+		<DefineConstants>DEBUG;TRACE</DefineConstants>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<Title>Tests for Transit for ClojureCLR</Title>
+		<Description>A port of Transit-CSharp tests for Clojure CLR.</Description>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <PackageReference Include="Clojure" Version="1.10.0" />
+	  <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.9.4" />
+	  <PackageReference Include="Moq" Version="4.16.1" />
+	  <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
+	  <PackageReference Include="NUnit" Version="3.13.2" />
+	  <PackageReference Include="System.Collections.Immutable" Version="5.0.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\Transit\TransitCljr.Alpha.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<EmbeddedResource Update="Properties\Resources.resx">
+			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</EmbeddedResource>
+	</ItemGroup>
+
+</Project>

@@ -16,21 +16,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
+using clojure.lang;
+using Sellars.Transit.Alpha;
 
-namespace Beerendonk.Transit
+namespace Sellars.Transit.Cljr.Impl.ReadHandlers
 {
     /// <summary>
-    /// Represents a symbol.
+    /// Represents a ratio read handler.
     /// </summary>
-    public interface ISymbol : IComparable<ISymbol>
+    internal class RatioReadHandler : IReadHandler
     {
         /// <summary>
-        /// Gets the value.
+        /// Converts a transit value to an instance of <see cref="Ratio"/>.
         /// </summary>
-        /// <value>
-        /// The value.
-        /// </value>
-        string Value { get; }
+        /// <param name="representation">The transit value.</param>
+        /// <returns>
+        /// The converted object.
+        /// </returns>
+        public object FromRepresentation(object representation)
+        {
+            return new Ratio((BigInteger)RT.nth(representation, 0), (BigInteger)RT.nth(representation, 1));
+        }
     }
 }

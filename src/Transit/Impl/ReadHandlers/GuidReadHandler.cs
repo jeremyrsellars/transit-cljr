@@ -16,9 +16,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Beerendonk.Transit.Java;
 using System;
-using System.Collections.Immutable;
+using System.Collections;
+using Beerendonk.Transit.Java;
+using Sellars.Transit.Alpha;
 
 namespace Beerendonk.Transit.Impl.ReadHandlers
 {
@@ -32,7 +33,7 @@ namespace Beerendonk.Transit.Impl.ReadHandlers
             }
             else
             {
-                IImmutableList<object> l = (IImmutableList<object>)representation;
+                IList l = (IList)representation;
                 return (Guid)new Uuid((long)l[0], (long)l[1]);
             }
         }

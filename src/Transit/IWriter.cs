@@ -16,7 +16,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace Beerendonk.Transit
+namespace Sellars.Transit.Alpha
 {
     /// <summary>
     /// Interface for writing values in transit format.

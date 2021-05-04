@@ -16,15 +16,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Collections.Immutable;
+using clojure.lang;
 using Sellars.Transit.Alpha;
 
-namespace Beerendonk.Transit.Impl
+namespace Sellars.Transit.Cljr.Impl
 {
     /// <summary>
-    /// Represents a dictionary builder.
+    /// Represents a dictionary builder targetted at clojure.lang.IPersistentMap.
     /// </summary>
-    internal class DictionaryBuilder : IDictionaryReader
+    internal class MapBuilder : IDictionaryReader
     {
         /// <summary>
         /// Initializes a new gestational dictionary.
@@ -34,7 +34,7 @@ namespace Beerendonk.Transit.Impl
         /// </returns>
         public object Init()
         {
-            return ImmutableDictionary.Create<object, object>();
+            return PersistentArrayMap.EMPTY.asTransient();
         }
 
         /// <summary>
@@ -49,7 +49,7 @@ namespace Beerendonk.Transit.Impl
         /// </returns>
         public object Add(object dictionary, object key, object value)
         {
-            return ((IImmutableDictionary<object, object>)dictionary).Add(key, value);
+            return ((ITransientCollection)dictionary).conj(new MapEntry(key, value));
         }
 
         /// <summary>
@@ -61,7 +61,7 @@ namespace Beerendonk.Transit.Impl
         /// </returns>
         public object Complete(object dictionary)
         {
-            return dictionary;
+            return ((ITransientCollection)dictionary).persistent();
         }
     }
 }

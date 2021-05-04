@@ -16,52 +16,51 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Collections.Immutable;
+using clojure.lang;
 using Sellars.Transit.Alpha;
 
-namespace Beerendonk.Transit.Impl
+namespace Sellars.Transit.Cljr.Impl
 {
     /// <summary>
-    /// Represents a dictionary builder.
+    /// Represents a list builder.
     /// </summary>
-    internal class DictionaryBuilder : IDictionaryReader
+    internal class ListBuilder : IListReader
     {
         /// <summary>
-        /// Initializes a new gestational dictionary.
+        /// Initializes a new gestational list.
         /// </summary>
         /// <returns>
-        /// A new gestational dictionary.
+        /// A new gestational list.
         /// </returns>
         public object Init()
         {
-            return ImmutableDictionary.Create<object, object>();
+            return PersistentVector.EMPTY.asTransient();
         }
 
         /// <summary>
-        /// Adds a key and value to the dictionary, returning a new dictionary;
-        /// new dictionary must be used for any further invocations.
+        /// Adds an item to the list, returning a new list;
+        /// new list must be used for any further invocations.
         /// </summary>
-        /// <param name="dictionary">A gestational dictionary.</param>
-        /// <param name="key">A key.</param>
-        /// <param name="value">A value.</param>
+        /// <param name="list">A gestational list.</param>
+        /// <param name="item">An item.</param>
         /// <returns>
-        /// A new gestational dictionary.
+        /// A new gestational list.
         /// </returns>
-        public object Add(object dictionary, object key, object value)
+        public object Add(object list, object item)
         {
-            return ((IImmutableDictionary<object, object>)dictionary).Add(key, value);
+            return ((ITransientCollection)list).conj(item);
         }
 
         /// <summary>
-        /// Completes building of a dictionary from a gestational dictionary.
+        /// Completes building of a list from a gestational list.
         /// </summary>
-        /// <param name="dictionary">The gestational dictionary.</param>
+        /// <param name="list">The gestational list.</param>
         /// <returns>
-        /// The completed dictionary.
+        /// The completed list.
         /// </returns>
-        public object Complete(object dictionary)
+        public object Complete(object list)
         {
-            return dictionary;
+            return ((ITransientCollection)list).persistent();
         }
     }
 }

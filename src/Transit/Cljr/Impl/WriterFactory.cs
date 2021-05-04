@@ -16,17 +16,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Newtonsoft.Json;
-using Beerendonk.Transit.Impl.WriteHandlers;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
+using Beerendonk.Transit.Impl;
+using Beerendonk.Transit.Impl.WriteHandlers;
 using clojure.lang;
+using Newtonsoft.Json;
 using Sellars.Transit.Alpha;
 
-namespace Beerendonk.Transit.Impl
+namespace Sellars.Transit.Cljr.Impl
 {
     /// <summary>
     /// Implements a writer factory.

@@ -19,7 +19,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Beerendonk.Transit
+namespace Sellars.Transit.Alpha
 {
     /// <summary>
     /// Represents a hypermedia link, as per http://amundsen.com/media-types/collection/format/#arrays-links

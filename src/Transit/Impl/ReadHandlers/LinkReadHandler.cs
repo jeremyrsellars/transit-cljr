@@ -17,6 +17,7 @@
 // limitations under the License.
 
 using System.Collections.Immutable;
+using Sellars.Transit.Alpha;
 
 namespace Beerendonk.Transit.Impl.ReadHandlers
 {
@@ -24,11 +25,9 @@ namespace Beerendonk.Transit.Impl.ReadHandlers
     {
         public object FromRepresentation(object representation)
         {
-            var dictionaryRepresentation = (IImmutableDictionary<object, object>)representation;
+            var dic = ImmutableDictionary<string, object>.Empty;
 
-            var dic = ImmutableDictionary.Create<string, object>();
-
-            foreach (var item in dictionaryRepresentation)
+            foreach (var item in AbstractEmitter.CoerceKeyValuePairs(representation))
             {
                 dic = dic.Add((string)item.Key, item.Value);
             }
