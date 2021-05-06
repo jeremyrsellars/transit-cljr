@@ -19,6 +19,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Sellars.Transit.Alpha;
+using Sellars.Transit.Util;
 
 namespace Beerendonk.Transit.Impl.WriteHandlers
 {
@@ -76,13 +77,13 @@ namespace Beerendonk.Transit.Impl.WriteHandlers
         {
             if (StringableKeys(obj))
             {
-                return Enumerable.ToList(AbstractEmitter.CoerceKeyValuePairs(obj));
+                return Enumerable.ToList(DictionaryHelper.CoerceKeyValuePairs(obj));
             }
             else
             {
                 var l = new List<object>();
 
-                foreach (var item in AbstractEmitter.CoerceKeyValuePairs(obj))
+                foreach (var item in DictionaryHelper.CoerceKeyValuePairs(obj))
                 {
                     l.Add(item.Key);
                     l.Add(item.Value);

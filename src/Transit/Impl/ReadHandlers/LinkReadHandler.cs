@@ -18,6 +18,7 @@
 
 using System.Collections.Immutable;
 using Sellars.Transit.Alpha;
+using Sellars.Transit.Util;
 
 namespace Beerendonk.Transit.Impl.ReadHandlers
 {
@@ -27,7 +28,7 @@ namespace Beerendonk.Transit.Impl.ReadHandlers
         {
             var dic = ImmutableDictionary<string, object>.Empty;
 
-            foreach (var item in AbstractEmitter.CoerceKeyValuePairs(representation))
+            foreach (var item in DictionaryHelper.CoerceKeyValuePairs(representation))
             {
                 dic = dic.Add((string)item.Key, item.Value);
             }
