@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFrameworks>netstandard2.1;net461</TargetFrameworks>
     <NeutralLanguage></NeutralLanguage>
-    <RootNamespace>Transit</RootNamespace>
+    <RootNamespace></RootNamespace>
     <Authors>Rick Beerendonk, Jeremy Sellars</Authors>
     <Version>0.8.5.0</Version>
     <InformationalVersion>0.8.5-alpha</InformationalVersion>
@@ -18,6 +18,11 @@
     <Title>Transit for ClojureCLR</Title>
     <Description>A port of Transit-CSharp for Clojure CLR.</Description>
   </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="**\*.clj*" />
+    <None Remove="**\*.clj*" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Clojure" Version="1.10.0" />

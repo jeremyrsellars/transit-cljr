@@ -3,7 +3,7 @@
 	<PropertyGroup>
     <TargetFrameworks>net461</TargetFrameworks>
 		<NeutralLanguage></NeutralLanguage>
-		<RootNamespace>Transit</RootNamespace>
+		<RootNamespace>Sellars.Transit</RootNamespace>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)'=='Debug'">
@@ -16,7 +16,6 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <PackageReference Include="Clojure" Version="1.10.0" />
 	  <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.9.4" />
 	  <PackageReference Include="Moq" Version="4.16.1" />
 	  <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
@@ -25,10 +24,15 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\Transit\TransitCljr.Alpha.csproj" />
+	  <ProjectReference Include="..\Transit\Sellars.Transit.Alpha.csproj" />
 	</ItemGroup>
 
-	<ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="**\*.clj*" />
+    <None Remove="**\*.clj*" />
+  </ItemGroup>
+
+  <ItemGroup>
 		<EmbeddedResource Update="Properties\Resources.resx">
 			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
 		</EmbeddedResource>
