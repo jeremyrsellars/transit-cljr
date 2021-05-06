@@ -30,4 +30,13 @@ namespace Sellars.Transit.Alpha
         /// <param name="value">The value to write.</param>
         void Write(T value);
     }
+
+    public interface IWriter
+    {
+        /// <summary>
+        /// Writes a single value to an output target.
+        /// </summary>
+        /// <param name="value">The value to write.</param>
+        void Write(object value);
+    }
 }

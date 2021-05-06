@@ -27,6 +27,7 @@ using Sellars.Transit.Alpha;
 using Format = Sellars.Transit.Alpha.TransitFactory.Format;
 using ReaderFactory = Sellars.Transit.Cljr.Impl.ReaderFactory;
 using WriterFactory = Sellars.Transit.Cljr.Impl.WriterFactory;
+using Sellars.Transit.Util;
 
 namespace Sellars.Transit.Cljr.Alpha
 {
@@ -36,17 +37,27 @@ namespace Sellars.Transit.Cljr.Alpha
     /// </summary>
     public class TransitFactory
     {
+        public static IWriter Writer(Format type, Stream output) =>
+            Writer(type, output, null);
+
         /// <summary>
         /// Creates a writer instance.
         /// </summary>
         /// <param name="type">The format to write in.</param>
         /// <param name="output">The output stream to write to.</param>
         /// <returns>A writer.</returns>
-        public static IWriter<T> Writer<T>(Format type, Stream output)
+        internal static IWriter<T> TypedWriter<T>(Format type, Stream output)
         {
-            return Writer<T>(type, output, null);
+            return TypedWriter<T>(type, output, null);
         }
-        
+
+        public static IWriter Writer(Format type, Stream output, object customHandlers) =>
+            new TypedWriterWrapper<object>(TypedWriter<object>(type, output,
+                customHandlers is object handlers
+                ? DictionaryHelper.CoerceKeyValuePairs(handlers)
+                  .ToImmutableDictionary(kvp => (Type)kvp.Key, kvp => (IWriteHandler)kvp.Value)
+                : null));
+
         /// <summary>
         /// Creates a writer instance.
         /// </summary>
@@ -57,7 +68,7 @@ namespace Sellars.Transit.Cljr.Alpha
         /// <returns>A writer</returns>
         /// <exception cref="System.NotImplementedException"></exception>
         /// <exception cref="System.ArgumentException">Unknown Writer type:  + type.ToString()</exception>
-        public static IWriter<T> Writer<T>(Format type, Stream output, IDictionary<Type, IWriteHandler> customHandlers)
+        internal static IWriter<T> TypedWriter<T>(Format type, Stream output, IDictionary<Type, IWriteHandler> customHandlers)
         {
             switch (type) {
                 case Format.MsgPack:
