@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.31005.135
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TransitCljr.Alpha.Tests", "Transit.Tests\TransitCljr.Alpha.Tests.csproj", "{0A95E77B-6676-42A4-9BEB-C90295E1079D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sellars.Transit.Tests", "Transit.Tests\Sellars.Transit.Tests.csproj", "{0A95E77B-6676-42A4-9BEB-C90295E1079D}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{B6A849E4-7023-4680-B15A-A08A5420B42A}"
 	ProjectSection(SolutionItems) = preProject
@@ -12,7 +12,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{B6A849
 		.nuget\NuGet.targets = .nuget\NuGet.targets
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TransitCljr.Alpha", "Transit\TransitCljr.Alpha.csproj", "{4BB97BD9-8643-4BEF-B634-F808D66084E4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sellars.Transit.Alpha", "Transit\Sellars.Transit.Alpha.csproj", "{4BB97BD9-8643-4BEF-B634-F808D66084E4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

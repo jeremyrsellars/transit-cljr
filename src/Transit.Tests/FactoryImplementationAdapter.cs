@@ -51,8 +51,8 @@ namespace Beerendonk.Transit.Tests
                 {
                     Name = typeof(Sellars.Transit.Cljr.Alpha.TransitFactory).FullName,
                     CreateReader = Sellars.Transit.Cljr.Alpha.TransitFactory.Reader,
-                    CreateWriter = Sellars.Transit.Cljr.Alpha.TransitFactory.Writer<object>,
-                    CreateCustomWriter = Sellars.Transit.Cljr.Alpha.TransitFactory.Writer<object>,
+                    CreateWriter = Sellars.Transit.Cljr.Alpha.TransitFactory.TypedWriter<object>,
+                    CreateCustomWriter = Sellars.Transit.Cljr.Alpha.TransitFactory.TypedWriter<object>,
                     SetType = typeof(clojure.lang.IPersistentSet),
                     DictionaryType = typeof(clojure.lang.IPersistentMap),
                     ListType = typeof(clojure.lang.IPersistentVector),
