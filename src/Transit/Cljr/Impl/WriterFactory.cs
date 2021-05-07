@@ -74,6 +74,7 @@ namespace Sellars.Transit.Cljr.Impl
             builder.Add(typeof(IList<>), new ListWriteHandler());
             builder.Add(typeof(IDictionary<,>), new DictionaryWriteHandler());
             builder.Add(typeof(IDictionary), new DictionaryWriteHandler());
+            builder.Add(typeof(IPersistentMap), new DictionaryWriteHandler());
 
             return builder.ToImmutable();
         }

@@ -28,6 +28,7 @@ using Format = Sellars.Transit.Alpha.TransitFactory.Format;
 using ReaderFactory = Sellars.Transit.Cljr.Impl.ReaderFactory;
 using WriterFactory = Sellars.Transit.Cljr.Impl.WriterFactory;
 using Sellars.Transit.Util;
+using System.Linq;
 
 namespace Sellars.Transit.Cljr.Alpha
 {
@@ -54,8 +55,7 @@ namespace Sellars.Transit.Cljr.Alpha
         public static IWriter Writer(Format type, Stream output, object customHandlers) =>
             new TypedWriterWrapper<object>(TypedWriter<object>(type, output,
                 customHandlers is object handlers
-                ? DictionaryHelper.CoerceKeyValuePairs(handlers)
-                  .ToImmutableDictionary(kvp => (Type)kvp.Key, kvp => (IWriteHandler)kvp.Value)
+                ? DictionaryHelper.CoerceDictionary<Type, IWriteHandler>(handlers)
                 : null));
 
         /// <summary>
@@ -135,6 +135,8 @@ namespace Sellars.Transit.Cljr.Alpha
                 return reader.Read<T>();
             }
 
+            object IReader.Read() => Read<object>();
+
             public IReader SetBuilders(
                 IDictionaryReader dictionaryBuilder,
                 IListReader listBuilder) 
@@ -158,7 +160,7 @@ namespace Sellars.Transit.Cljr.Alpha
         /// </param>
         /// <returns>A reader.</returns>
         public static IReader Reader(Format type, Stream input,
-                                    IImmutableDictionary<string, IReadHandler> customHandlers,
+                                    object customHandlers,
                                     IDefaultReadHandler<object> customDefaultHandler) 
         {
             switch (type) {
@@ -168,12 +170,15 @@ namespace Sellars.Transit.Cljr.Alpha
                     // JSON parser creation blocks on input stream until 4 bytes
                     // are available to determine character encoding - this is
                     // unexpected, so defer creation until first read
-                    return new DeferredJsonReader(input, customHandlers, customDefaultHandler);
+                    return new DeferredJsonReader(input, CustomHandlers(), customDefaultHandler);
                 case Format.MsgPack:
-                    return ReaderFactory.GetMsgPackInstance(input, customHandlers, customDefaultHandler);
+                    return ReaderFactory.GetMsgPackInstance(input, CustomHandlers(), customDefaultHandler);
                 default:
                     throw new ArgumentException("Unknown Reader type: " + type.ToString());
             }
+
+            IImmutableDictionary<string, IReadHandler> CustomHandlers() =>
+                DictionaryHelper.CoerceIImmutableDictionary<string, IReadHandler>(customHandlers);
         }
 
         /// <summary>
@@ -315,18 +320,24 @@ namespace Sellars.Transit.Cljr.Alpha
         /// Returns a directory of classes to read handlers that is used by default.
         /// </summary>
         /// <returns>Tag to read handler directory.</returns>
-        public static IImmutableDictionary<string, IReadHandler> DefaultReadHandlers() 
+        public static IPersistentMap DefaultReadHandlers() 
         { 
-            return ReaderFactory.DefaultHandlers(); 
+            return (IPersistentMap) ReaderFactory.DefaultHandlers()
+                .Aggregate(PersistentHashMap.EMPTY.asTransient(),
+                    (m, entry) => m.conj(new MapEntry(entry.Key, entry.Value)))
+                .persistent();
         }
 
         /// <summary>
         /// Returns a directory of classes to write handlers that is used by default.
         /// </summary>
         /// <returns>Class to write handler directory.</returns>
-        public static IImmutableDictionary<Type, IWriteHandler> DefaultWriteHandlers() 
+        public static IPersistentMap DefaultWriteHandlers() 
         {
-            return WriterFactory.DefaultHandlers(); 
+            return (IPersistentMap) WriterFactory.DefaultHandlers()
+                .Aggregate(PersistentHashMap.EMPTY.asTransient(),
+                    (m, entry) => m.conj(new MapEntry(entry.Key, entry.Value)))
+                .persistent();
         }
 
         /// <summary>

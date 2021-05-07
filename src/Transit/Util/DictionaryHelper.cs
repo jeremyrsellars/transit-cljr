@@ -1,16 +1,35 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
 
 namespace Sellars.Transit.Util
 {
     internal static class DictionaryHelper
     {
+        public static Dictionary<TKey, TVal> CoerceDictionary<TKey, TVal>(
+            object keyValuePairEnumerable, Func<object, KeyValuePair<object, object>> coerceOrThrow = null)
+        {
+            if (keyValuePairEnumerable is null)
+                return null;
+            var dict = new Dictionary<TKey, TVal>();
+            foreach (var kvp in CoerceKeyValuePairs(keyValuePairEnumerable, coerceOrThrow))
+                dict.Add((TKey)kvp.Key, (TVal)kvp.Value);
+            return dict;
+        }
+
+        public static IImmutableDictionary<TKey, TVal> CoerceIImmutableDictionary<TKey, TVal>(
+            object keyValuePairEnumerable, Func<object, KeyValuePair<object, object>> coerceOrThrow = null) =>
+            keyValuePairEnumerable is null
+            ? null
+            : ImmutableDictionary<TKey, TVal>.Empty.AddRange(
+                CoerceKeyValuePairs(keyValuePairEnumerable, coerceOrThrow)
+                .Select(kvp => new KeyValuePair<TKey, TVal>((TKey)kvp.Key, (TVal)kvp.Value)));
+
         public static IEnumerable<KeyValuePair<object, object>> CoerceKeyValuePairs(
             object keyValuePairEnumerable, Func<object, KeyValuePair<object, object>> coerceOrThrow = null) =>
-            keyValuePairEnumerable is IEnumerable<KeyValuePair<object, object>> keyValuePairs
-                ? keyValuePairs
-                : CoerceKeyValuePairs((IEnumerable)keyValuePairEnumerable, coerceOrThrow);
+            CoerceKeyValuePairs((IEnumerable)keyValuePairEnumerable, coerceOrThrow);
 
         private static IEnumerable<KeyValuePair<object, object>> CoerceKeyValuePairs(
             IEnumerable keyValuePairEnumerable, Func<object, KeyValuePair<object, object>> coerceOrThrow = null)

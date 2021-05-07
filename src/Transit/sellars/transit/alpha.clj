@@ -43,7 +43,8 @@
     (str/replace (name kw) #"^.|-."
       #(-> %
            (str/upper-case)
-           (str/replace #"-" "")))))
+           (str/replace #"-" "")))
+    true))
 
 (defn tagged-value
   "Creates a TaggedValue object."
@@ -69,19 +70,19 @@
    If a non-fn is passed as an argument, implemented
    handler method returns the value unaltered."
   ([tag-fn rep-fn]
-     (write-handler tag-fn rep-fn nil nil))
+   (write-handler tag-fn rep-fn nil nil))
   ([tag-fn rep-fn str-rep-fn]
-     (write-handler tag-fn rep-fn str-rep-fn nil))
+   (write-handler tag-fn rep-fn str-rep-fn nil))
   ([tag-fn rep-fn str-rep-fn verbose-handler-fn]
-     (let [tag-fn (fn-or-val tag-fn)
-           rep-fn (fn-or-val rep-fn)
-           str-rep-fn (fn-or-val str-rep-fn)
-           verbose-handler-fn (fn-or-val verbose-handler-fn)]
-       (reify IWriteHandler
-         (Tag [_ o] (tag-fn o))
-         (Representation [_ o] (rep-fn o))
-         (StringRepresentation [_ o] (when str-rep-fn (str-rep-fn o)))
-         (GetVerboseHandler [_] (when verbose-handler-fn (verbose-handler-fn)))))))
+   (let [tag-fn (fn-or-val tag-fn)
+         rep-fn (fn-or-val rep-fn)
+         str-rep-fn (fn-or-val str-rep-fn)
+         verbose-handler-fn (fn-or-val verbose-handler-fn)]
+    (reify IWriteHandler
+        (Tag [_ o] (tag-fn o))
+        (Representation [_ o] (rep-fn o))
+        (StringRepresentation [_ o] (when str-rep-fn (str-rep-fn o)))
+        (GetVerboseHandler [_] (when verbose-handler-fn (verbose-handler-fn)))))))
 
 (deftype WithMeta [value meta])
 
@@ -90,7 +91,15 @@
    Clojure types. Java types are handled
    by the default WriteHandlers provided by the
    transit-java library."
-   (TransitFactory/DefaultWriteHandlers))
+  {sellars.transit.alpha.WithMeta
+   (reify IWriteHandler
+     (Tag [_ _] "with-meta")
+     (Representation [_ o]
+       (TransitFactory/taggedValue "array"
+         [(.-value ^sellars.transit.alpha.WithMeta o)
+          (.-meta ^sellars.transit.alpha.WithMeta o)]))
+     (StringRepresentation [_ _] nil)
+     (GetVerboseHandler [_] nil))})
 
 (deftype Writer [w])
 
@@ -112,7 +121,7 @@
    they are written."
   ([out type] (writer out type {}))
   ([^Stream out type {:keys [handlers default-handler transform]}]
-     (if (#{:json :json-verbose :msgpack} type)
+   (if (#{:json :json-verbose :msgpack} type)
        (let [handler-map (if (instance? HandlerMapContainer handlers)
                            (handler-map handlers)
                            (merge default-write-handlers handlers))]
@@ -160,7 +169,10 @@
    Clojure types. Java types are handled
    by the default ReadHandlers provided by the
    transit-java library."
-   (TransitFactory/DefaultReadHandlers))
+  {"with-meta"
+   (reify IReadHandler
+     (FromRepresentation [_ o]
+       (with-meta (nth o 0) (nth o 1))))})
 
 (defn map-builder
   "Creates a MapBuilder that makes Clojure-
@@ -200,7 +212,7 @@
    as TaggedValues."
   ([in type] (reader in type {}))
   ([^Stream in type {:keys [handlers default-handler]}]
-     (if (#{:json :json-verbose :msgpack} type)
+   (if (#{:json :json-verbose :msgpack} type)
        (let [handler-map (if (instance? HandlerMapContainer handlers)
                            (handler-map handlers)
                            (merge default-read-handlers handlers))
@@ -229,7 +241,7 @@
     (GetVerboseHandler [_] nil)))
 
 (defn record-write-handlers
-  "Creates a map of record types to WriteHandlers"
+  "Creates a map of record types to IWriteHandlers"
   [& types]
   (reduce (fn [h t] (assoc h t (record-write-handler t)))
           {}
@@ -252,6 +264,7 @@
           {}
           types))
 
+#_
 (defn read-handler-map
   "Returns a HandlerMapContainer containing a ReadHandlerMap
   containing all the default handlers for Clojure and Java and any
@@ -263,6 +276,7 @@
   (HandlerMapContainer.
    (TransitFactory/readHandlerMap (merge default-read-handlers custom-handlers))))
 
+#_
 (defn write-handler-map
   "Returns a HandlerMapContainer containing a WriteHandlerMap
   containing all the default handlers for Clojure and Java and any
@@ -372,5 +386,5 @@
 
   (def in (ByteArrayStream. (.toByteArray out)))
   (def r (reader in :json {:handlers custom-read-handler-map}))
-  (read r)
-  )
+  (read r))
+  

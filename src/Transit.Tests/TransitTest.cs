@@ -819,7 +819,7 @@ namespace Beerendonk.Transit.Tests
             mock.Verify(m => m.GetVerboseHandler());
 
             // JSON
-            mock.ResetCalls();
+            mock.Invocations.Clear();
             Assert.AreEqual(Scalar("\"NULL\""), WriteJson(null, customHandlers));
             mock.Verify(m => m.Representation(null));
         }

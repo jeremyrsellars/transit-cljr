@@ -17,6 +17,7 @@
   <PropertyGroup>
     <Title>Transit for ClojureCLR</Title>
     <Description>A port of Transit-CSharp for Clojure CLR.</Description>
+    <AssemblyName>Sellars.Transit.clj</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

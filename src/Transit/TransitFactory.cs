@@ -141,6 +141,8 @@ namespace Sellars.Transit.Alpha
                 return reader.Read<T>();
             }
 
+            object IReader.Read() => Read<object>();
+
             public IReader SetBuilders(
                 IDictionaryReader dictionaryBuilder,
                 IListReader listBuilder) 

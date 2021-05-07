@@ -29,5 +29,7 @@ namespace Sellars.Transit.Alpha
         /// <typeparam name="T">The type of the value.</typeparam>
         /// <returns>The value.</returns>
         T Read<T>();
+        
+        object Read();
     }
 }

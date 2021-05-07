@@ -175,6 +175,8 @@ namespace Sellars.Transit.Cljr.Impl
                 return (T)p.Parse(cache.Init());
             }
 
+            object IReader.Read() => Read<object>();
+
             public IReader SetBuilders(IDictionaryReader dictionaryBuilder, IListReader listBuilder)
             {
                 if (initialized)
