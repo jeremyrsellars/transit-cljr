@@ -1,6 +1,8 @@
-﻿namespace Beerendonk.Transit.Impl.WriteHandlers
+﻿using Sellars.Transit.Alpha;
+
+namespace Beerendonk.Transit.Impl.WriteHandlers
 {
-    internal class KeywordWriteHandler : AbstractWriteHandler
+    internal class KeywordWriteHandler : AbstractWriteHandler, IKnownTag
     {
         private readonly string t;
 
@@ -9,10 +11,9 @@
             this.t = t;
         }
 
-        public override string Tag(object ignored)
-        {
-            return t;
-        }
+        public string KnownTag => t;
+
+        public override string Tag(object ignored) => KnownTag;
 
         public override object Representation(object obj)
         {

@@ -21,12 +21,11 @@ using Sellars.Transit.Alpha;
 
 namespace Beerendonk.Transit.Impl.WriteHandlers
 {
-    internal class DateTimeWriteHandler : AbstractWriteHandler
+    internal class DateTimeWriteHandler : AbstractWriteHandler, IKnownTag
     {
-        public override string Tag(object ignored)
-        {
-            return "m";
-        }
+        public string KnownTag => "m";
+
+        public override string Tag(object ignored) => KnownTag;
 
         public override object Representation(object obj)
         {

@@ -17,15 +17,15 @@
 // limitations under the License.
 
 using clojure.lang;
+using Sellars.Transit.Alpha;
 
 namespace Beerendonk.Transit.Impl.WriteHandlers
 {
-    internal class RatioWriteHandler : AbstractWriteHandler
+    internal class RatioWriteHandler : AbstractWriteHandler, IKnownTag
     {
-        public override string Tag(object ignored)
-        {
-            return "ratio";
-        }
+        public string KnownTag => "ratio";
+
+        public override string Tag(object ignored) => KnownTag;
 
         public override object Representation(object obj)
         {

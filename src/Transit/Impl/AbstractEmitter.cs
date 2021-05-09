@@ -108,6 +108,11 @@ namespace Beerendonk.Transit.Impl
         private IWriteHandler GetHandler(object obj)
         {
             Type type = (obj != null) ? obj.GetType() : typeof(NullType);
+            return GetHandlerForType(type);
+        }
+
+        internal IWriteHandler GetHandlerForType(Type type)
+        {
             IWriteHandler handler = null;
 
             if (!handlers.TryGetValue(type, out handler))

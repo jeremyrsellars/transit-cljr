@@ -20,12 +20,11 @@ using Sellars.Transit.Alpha;
 
 namespace Beerendonk.Transit.Impl.WriteHandlers
 {
-    internal class EnumerableWriteHandler : AbstractWriteHandler
+    internal class EnumerableWriteHandler : AbstractWriteHandler, IKnownTag
     {
-        public override string Tag(object ignored)
-        {
-            return "list";
-        }
+        public string KnownTag => "list";
+
+        public override string Tag(object ignored) => KnownTag;
 
         public override object Representation(object obj)
         {

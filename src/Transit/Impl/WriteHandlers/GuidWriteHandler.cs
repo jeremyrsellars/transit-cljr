@@ -17,16 +17,16 @@
 // limitations under the License.
 
 using Beerendonk.Transit.Java;
+using Sellars.Transit.Alpha;
 using System;
 
 namespace Beerendonk.Transit.Impl.WriteHandlers
 {
-    internal class GuidWriteHandler : AbstractWriteHandler
+    internal class GuidWriteHandler : AbstractWriteHandler, IKnownTag
     {
-        public override string Tag(object ignored)
-        {
-            return "u";
-        }
+        public string KnownTag => "u";
+
+        public override string Tag(object ignored) => KnownTag;
 
         public override object Representation(object obj)
         {

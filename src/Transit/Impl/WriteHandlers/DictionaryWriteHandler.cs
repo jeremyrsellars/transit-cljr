@@ -16,6 +16,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Sellars.Transit.Alpha;
@@ -25,6 +26,13 @@ namespace Beerendonk.Transit.Impl.WriteHandlers
 {
     internal class DictionaryWriteHandler : AbstractWriteHandler, IAbstractEmitterAware
     {
+        private static readonly string[] Dictionary_2InterfaceTypeNames =
+        {
+            "System.Collections.Generic.IReadOnlyDictionary`2",
+            "System.Collections.Generic.IDictionary`2",
+            "System.Collections.Immutable.IImmutableDictionary`2",
+        };
+
         private AbstractEmitter abstractEmitter;
         
         public void SetEmitter(AbstractEmitter abstractEmitter)
@@ -34,6 +42,9 @@ namespace Beerendonk.Transit.Impl.WriteHandlers
 
         private bool StringableKeys(object d)
         {
+            if (d != null && TypeStaticallyUsesStringableKeys(d.GetType()))
+                return true;
+
             System.Collections.IEnumerable keys;
             if (d is System.Collections.IDictionary dict)
                 keys = dict.Keys;
@@ -59,6 +70,47 @@ namespace Beerendonk.Transit.Impl.WriteHandlers
 	        }
             
             return true;
+        }
+
+        /// <summary>
+        /// This is a "more-static" version of StringableKeys intent
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        private bool TypeStaticallyUsesStringableKeys(Type type)
+        {
+            try
+            {
+                foreach (string name in Dictionary_2InterfaceTypeNames)
+                {
+                    if (type.GetInterface(name) is Type interfaceType
+                        && interfaceType.GetGenericArguments().First() is Type keyType)
+                    {
+                        return KeyTypeIsAlwaysStringable(keyType);
+                    }
+                }
+            }
+            catch (System.Reflection.AmbiguousMatchException)
+            {
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// This is a "more-static" version of StringableKeys intent
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        private bool KeyTypeIsAlwaysStringable(Type keyType)
+        {
+            if (abstractEmitter.GetHandlerForType(keyType) is IKnownTag knownTag)
+            {
+                var tag = knownTag.KnownTag;
+                return (tag != null && tag.Length == 1)
+                    || (tag == null && typeof(string) == keyType);
+            }
+
+            return false;
         }
 
         public override string Tag(object obj)

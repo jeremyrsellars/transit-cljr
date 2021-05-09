@@ -16,14 +16,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using Sellars.Transit.Alpha;
+
 namespace Beerendonk.Transit.Impl.WriteHandlers
 {
-    internal class NullWriteHandler : AbstractWriteHandler
+    internal class NullWriteHandler : AbstractWriteHandler, IKnownTag
     {
-        public override string Tag(object ignored)
-        {
-            return "_";
-        }
+        public string KnownTag => "_";
+
+        public override string Tag(object ignored) => KnownTag;
 
         public override object Representation(object ignored)
         {

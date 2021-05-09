@@ -23,10 +23,9 @@ namespace Beerendonk.Transit.Impl.WriteHandlers
 {
     internal class ListWriteHandler : AbstractWriteHandler
     {
-        public override string Tag(object ignored)
-        {
-            return "array";
-        }
+        public string KnownTag => "array";
+
+        public override string Tag(object ignored) => KnownTag;
 
         public override object Representation(object obj)
         {

@@ -16,9 +16,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using Sellars.Transit.Alpha;
+
 namespace Beerendonk.Transit.Impl.WriteHandlers
 {
-    internal class IntegerWriteHandler : AbstractWriteHandler
+    internal class IntegerWriteHandler : AbstractWriteHandler, IKnownTag
     {
         private readonly string t;
 
@@ -27,10 +29,9 @@ namespace Beerendonk.Transit.Impl.WriteHandlers
             this.t = t;
         }
 
-        public override string Tag(object ignored)
-        {
-            return t;
-        }
+        public string KnownTag => t;
+
+        public override string Tag(object ignored) => KnownTag;
 
         public override object Representation(object obj)
         {
