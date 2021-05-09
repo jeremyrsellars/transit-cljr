@@ -681,12 +681,45 @@ namespace Beerendonk.Transit.Tests
         }
 
         [Test]
-        public void TestWriteDictionary()
+        public void TestWriteStringKeyedDictionary()
         {
+            // A static StringableKeys map.
             IDictionary<string, int> d = new Dictionary<string, int> { {"foo", 1}, {"bar", 2} };
 
             Assert.AreEqual("{\"foo\":1,\"bar\":2}", WriteJsonVerbose(d));
             Assert.AreEqual("[\"^ \",\"foo\",1,\"bar\",2]", WriteJson(d));
+        }
+
+        [Test]
+        public void TestWriteObjectKeyedDictionary()
+        {
+            // Another StringableKeys map, but that cannot be checked by key type.
+            IDictionary<object, int> d = new Dictionary<object, int> { { "foo", 1 }, { "bar", 2 } };
+
+            Assert.AreEqual("{\"foo\":1,\"bar\":2}", WriteJsonVerbose(d));
+            Assert.AreEqual("[\"^ \",\"foo\",1,\"bar\",2]", WriteJson(d));
+
+            // A composite-keyed map.
+            IDictionary<object, int> d2 = new Dictionary<object, int> {
+                { d, 1 },
+                { RT.keyword(null, "bar"), 2 },
+            };
+
+            Assert.AreEqual("{\"~#cmap\":[{\"foo\":1,\"bar\":2},1,\"~:bar\",2]}", WriteJsonVerbose(d2));
+            Assert.AreEqual("[\"~#cmap\",[[\"^ \",\"foo\",1,\"bar\",2],1,\"~:bar\",2]]", WriteJson(d2));
+        }
+
+        [Test]
+        public void TestWriteKeywordDictionary()
+        {
+            // Another static StringableKeys map.
+            IDictionary<Keyword, int> d = new Dictionary<Keyword, int> { 
+                { RT.keyword("s", "foo"), 1 }, 
+                { RT.keyword(null, "bar"), 2 },
+            };
+
+            Assert.AreEqual("{\"~:s/foo\":1,\"~:bar\":2}", WriteJsonVerbose(d));
+            Assert.AreEqual("[\"^ \",\"~:s/foo\",1,\"~:bar\",2]", WriteJson(d));
         }
 
         [Test]
