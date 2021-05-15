@@ -134,7 +134,8 @@ namespace Sellars.Transit.Cljr.Impl
             IImmutableDictionary<string, IReadHandler> customHandlers,
             IDefaultReadHandler<object> customDefaultHandler)
         {
-            return new MessagePackReader(input, Handlers(customHandlers), customDefaultHandler);
+            return new MsgPackReader(input, Handlers(customHandlers), customDefaultHandler,
+                MessagePack.MessagePackSerializerOptions.Standard);
         }
 
         private class DefaultReadHandler : IDefaultReadHandler<ITaggedValue>

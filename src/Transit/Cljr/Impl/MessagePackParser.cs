@@ -13,6 +13,8 @@ namespace Sellars.Transit.Impl
     internal class MessagePackParser : AbstractParser
     {
         private readonly MessagePackStreamReader streamReader;
+        private readonly MessagePackSerializerOptions options;
+
         public CancellationToken CancellationToken { get; set; }
 
         /// <summary>
@@ -25,6 +27,7 @@ namespace Sellars.Transit.Impl
         /// <param name="listBuilder">The list builder.</param>
         public MessagePackParser(
             MessagePackStreamReader reader,
+            MessagePackSerializerOptions options,
             IImmutableDictionary<string, IReadHandler> handlers,
             IDefaultReadHandler<object> defaultHandler,
             IDictionaryReader dictionaryBuilder,
@@ -32,6 +35,7 @@ namespace Sellars.Transit.Impl
             : base(handlers, defaultHandler, dictionaryBuilder, listBuilder)
         {
             streamReader = reader;
+            this.options = options;
         }
 
         /// <summary>
@@ -60,19 +64,19 @@ namespace Sellars.Transit.Impl
                 case MessagePackType.String:
                     return cache.CacheRead(ParseString(ref rdr, cache), false, this);
                 case MessagePackType.Binary:
-                    return ParseBinary(ref rdr, cache);
+                    return ParseBinary(ref rdr, options, cache);
                 case MessagePackType.Array:
-                    return ParseArray(ref rdr, false, cache, null);
+                    return ParseArray(ref rdr, options, false, cache, null);
                 case MessagePackType.Map:
-                    return ParseMap(ref rdr, false, cache, null);
+                    return ParseMap(ref rdr, options, false, cache, null);
                 case MessagePackType.Extension:
-                    return ParseExtension(ref rdr, cache);
+                    return ParseExtension(ref rdr, options, cache);
                 default:
-                    return ParseUnknown(ref rdr, cache);
+                    return ParseUnknown(ref rdr, options, cache);
             }
         }
 
-        internal static object ParseUnknown(ref MessagePackReader rdr, ReadCache cache) =>
+        internal static object ParseUnknown(ref MessagePackReader rdr, MessagePackSerializerOptions options, ReadCache cache) =>
             throw new NotSupportedException($"Not supported/implemented.  Code: {rdr.NextCode}. Type: {rdr.NextMessagePackType}.");
 
         internal static long ParseInteger(ref MessagePackReader rdr, ReadCache cache) =>
@@ -87,78 +91,86 @@ namespace Sellars.Transit.Impl
         internal static string ParseString(ref MessagePackReader rdr, ReadCache cache) =>
             rdr.ReadString();
 
-        internal object ParseBinary(ref MessagePackReader rdr, ReadCache cache) =>
+        internal object ParseBinary(ref MessagePackReader rdr, MessagePackSerializerOptions options, ReadCache cache) =>
             throw new NotSupportedException($"Not supported/implemented.  Code: {rdr.NextCode}. Type: {rdr.NextMessagePackType}.");
-        internal object ParseArray(ref MessagePackReader rdr, bool asDictionaryKey, ReadCache cache, IListReadHandler handler)
+
+        internal object ParseArray(ref MessagePackReader rdr, MessagePackSerializerOptions options, bool asDictionaryKey, ReadCache cache, IListReadHandler handler)
         {
             var count = rdr.ReadArrayHeader();
-            //if (jp.NextToken() != JsonToken.EndArray)
-            if (count >= 1)
+            options.Security.DepthStep(ref rdr);
+            try
             {
-                object firstVal = ParseVal(ref rdr, false, cache);
-                if (firstVal != null)
+                if (count >= 1)
                 {
-                    if (firstVal is string && (string)firstVal == Constants.DirectoryAsList)
+                    object firstVal = ParseVal(ref rdr, options, false, cache);
+                    if (firstVal != null)
                     {
-                        // if the same, build a map w/ rest of array contents
-                        return ParseArrayAsDictionary(ref rdr, false, cache, null, count - 1);
-                    }
-                    else if (firstVal is Tag)
-                    {
-                        if (firstVal is Tag)
+                        if (firstVal is string && (string)firstVal == Constants.DirectoryAsList)
                         {
-                            object val;
-                            //jp.Read(); // advance to value
-                            string tag = ((Tag)firstVal).GetValue();
-                            IReadHandler val_handler;
-                            if (TryGetHandler(tag, out val_handler))
+                            // if the same, build a map w/ rest of array contents
+                            return ParseArrayAsDictionary(ref rdr, options, false, cache, null, count - 1);
+                        }
+                        else if (firstVal is Tag)
+                        {
+                            if (firstVal is Tag)
                             {
-                                if(rdr.NextMessagePackType == MessagePackType.Map && val_handler is IDictionaryReadHandler dictHandler)
-                                //if (this.jp.TokenType == JsonToken.StartObject && val_handler is IDictionaryReadHandler)
+                                object val;
+                                //jp.Read(); // advance to value
+                                string tag = ((Tag)firstVal).GetValue();
+                                IReadHandler val_handler;
+                                if (TryGetHandler(tag, out val_handler))
                                 {
-                                    // use map reader to decode value
-                                    val = ParseArrayAsDictionary(ref rdr, false, cache, dictHandler, count - 1);
-                                }
-                                //else if (this.jp.TokenType == JsonToken.StartArray && val_handler is IListReadHandler)
-                                else if (rdr.NextMessagePackType == MessagePackType.Array && val_handler is IListReadHandler listHandler)
-                                {
-                                    // use array reader to decode value
-                                    val = ParseArray(ref rdr, false, cache, listHandler);
+                                    if(rdr.NextMessagePackType == MessagePackType.Map && val_handler is IDictionaryReadHandler dictHandler)
+                                    //if (this.jp.TokenType == JsonToken.StartObject && val_handler is IDictionaryReadHandler)
+                                    {
+                                        // use map reader to decode value
+                                        val = ParseArrayAsDictionary(ref rdr, options, false, cache, dictHandler, count - 1);
+                                    }
+                                    //else if (this.jp.TokenType == JsonToken.StartArray && val_handler is IListReadHandler)
+                                    else if (rdr.NextMessagePackType == MessagePackType.Array && val_handler is IListReadHandler listHandler)
+                                    {
+                                        // use array reader to decode value
+                                        val = ParseArray(ref rdr, options, false, cache, listHandler);
+                                    }
+                                    else
+                                    {
+                                        // read value and decode normally
+                                        val = val_handler.FromRepresentation(ParseVal(ref rdr, options, false, cache));
+                                    }
                                 }
                                 else
                                 {
-                                    // read value and decode normally
-                                    val = val_handler.FromRepresentation(ParseVal(ref rdr, false, cache));
+                                    // default decode
+                                    val = this.Decode(tag, ParseVal(ref rdr, options, false, cache));
                                 }
+                                //jp.Read(); // advance past end of object or array
+                                return val;
                             }
-                            else
-                            {
-                                // default decode
-                                val = this.Decode(tag, ParseVal(ref rdr, false, cache));
-                            }
-                            //jp.Read(); // advance past end of object or array
-                            return val;
                         }
                     }
+
+                    // Process list w/o special decoding or interpretation
+                    IListReader lr = (handler != null) ? handler.ListReader() : listBuilder;
+                    object l = lr.Init();
+                    l = lr.Add(l, firstVal);
+                    for(int i = 1; i < count; i++)
+                    {
+                        l = lr.Add(l, ParseVal(ref rdr, options, false, cache));
+                    }
+                    return lr.Complete(l);
                 }
 
-                // Process list w/o special decoding or interpretation
-                IListReader lr = (handler != null) ? handler.ListReader() : listBuilder;
-                object l = lr.Init();
-                l = lr.Add(l, firstVal);
-                for(int i = 1; i < count; i++)
-                {
-                    l = lr.Add(l, ParseVal(ref rdr, false, cache));
-                }
-                return lr.Complete(l);
+                // Make an empty collection, honoring handler's ListReader, if present
+                IListReader lr2 = (handler != null) ? handler.ListReader() : listBuilder;
+                return lr2.Complete(lr2.Init());
             }
-
-            // Make an empty collection, honoring handler's ListReader, if present
-            IListReader lr2 = (handler != null) ? handler.ListReader() : listBuilder;
-            return lr2.Complete(lr2.Init());
+            finally
+            {
+                rdr.Depth--;
+            }
         }
 
-        internal object ParseMap(ref MessagePackReader rdr, bool asDictionaryKey, ReadCache cache, IDictionaryReadHandler handler)
+        internal object ParseMap(ref MessagePackReader rdr, MessagePackSerializerOptions options, bool asDictionaryKey, ReadCache cache, IDictionaryReadHandler handler)
         {
             IDictionaryReader dr = (handler != null) ? handler.DictionaryReader() : dictionaryBuilder;
 
@@ -166,55 +178,63 @@ namespace Sellars.Transit.Impl
 
             var count = rdr.ReadMapHeader();
 
-            //while (jp.NextToken() != endToken)
-            for(int i = 0; i < count; i++)
+            options.Security.DepthStep(ref rdr);
+            try
             {
-                object key = ParseVal(ref rdr, true, cache);
-                if (key is Tag)
+                //while (jp.NextToken() != endToken)
+                for (int i = 0; i < count; i++)
                 {
-                    object val;
-                    //jp.Read(); // advance to read value
-                    string tag = ((Tag)key).GetValue();
-                    IReadHandler val_handler;
-                    if (TryGetHandler(tag, out val_handler))
+                    object key = ParseVal(ref rdr, options, true, cache);
+                    if (key is Tag)
                     {
-                        //if (this.jp.TokenType == JsonToken.StartObject && val_handler is IDictionaryReadHandler dictHandler)
-                        if (rdr.NextMessagePackType == MessagePackType.Map && val_handler is IDictionaryReadHandler dictHandler)
+                        object val;
+                        //jp.Read(); // advance to read value
+                        string tag = ((Tag)key).GetValue();
+                        IReadHandler val_handler;
+                        if (TryGetHandler(tag, out val_handler))
                         {
-                            // use map reader to decode value
-                            val = ParseMap(ref rdr, false, cache, dictHandler);
-                        }
-                        //else if (this.jp.TokenType == JsonToken.StartArray && val_handler is IListReadHandler listHandler)
-                        else if (rdr.NextMessagePackType == MessagePackType.Array && val_handler is IListReadHandler listHandler)
-                        {
-                            // use array reader to decode value
-                            val = ParseArray(ref rdr, false, cache, listHandler);
+                            //if (this.jp.TokenType == JsonToken.StartObject && val_handler is IDictionaryReadHandler dictHandler)
+                            if (rdr.NextMessagePackType == MessagePackType.Map && val_handler is IDictionaryReadHandler dictHandler)
+                            {
+                                // use map reader to decode value
+                                val = ParseMap(ref rdr, options, false, cache, dictHandler);
+                            }
+                            //else if (this.jp.TokenType == JsonToken.StartArray && val_handler is IListReadHandler listHandler)
+                            else if (rdr.NextMessagePackType == MessagePackType.Array && val_handler is IListReadHandler listHandler)
+                            {
+                                // use array reader to decode value
+                                val = ParseArray(ref rdr, options, false, cache, listHandler);
+                            }
+                            else
+                            {
+                                // read value and decode normally
+                                val = val_handler.FromRepresentation(ParseVal(ref rdr, options, false, cache));
+                            }
                         }
                         else
                         {
-                            // read value and decode normally
-                            val = val_handler.FromRepresentation(ParseVal(ref rdr, false, cache));
+                            // default decode
+                            val = this.Decode(tag, ParseVal(ref rdr, options, false, cache));
                         }
+                        //jp.Read(); // advance to read end of object or array
+                        return val;
                     }
                     else
                     {
-                        // default decode
-                        val = this.Decode(tag, ParseVal(ref rdr, false, cache));
+                        //jp.Read(); // advance to read value
+                        d = dr.Add(d, key, ParseVal(ref rdr, options, false, cache));
                     }
-                    //jp.Read(); // advance to read end of object or array
-                    return val;
                 }
-                else
-                {
-                    //jp.Read(); // advance to read value
-                    d = dr.Add(d, key, ParseVal(ref rdr, false, cache));
-                }
+            }
+            finally
+            {
+                rdr.Depth--;
             }
 
             return dr.Complete(d);
         }
 
-        internal object ParseExtension(ref MessagePackReader rdr, ReadCache cache) =>
+        internal object ParseExtension(ref MessagePackReader rdr, MessagePackSerializerOptions options, ReadCache cache) =>
             throw new NotSupportedException($"Not supported/implemented.  Code: {rdr.NextCode}. Type: {rdr.NextMessagePackType}.");
 
         /// <summary>
@@ -232,14 +252,14 @@ namespace Sellars.Transit.Impl
                 return null;
 
             var rdr = new MessagePackReader(bytes.Value);
-            return ParseVal(ref rdr, asDictionaryKey, cache);
+            return ParseVal(ref rdr, options, asDictionaryKey, cache);
         }
 
-        internal object ParseVal(ref MessagePackReader rdr, bool asDictionaryKey, ReadCache cache)
+        internal object ParseVal(ref MessagePackReader rdr, MessagePackSerializerOptions options, bool asDictionaryKey, ReadCache cache)
         {
             switch (rdr.NextMessagePackType)
             {
-                //MessagePackType.Unknown: return ParseUnknown(ref rdr, cache);
+                //MessagePackType.Unknown: return ParseUnknown(ref rdr, options, cache);
                 case MessagePackType.Integer:
                     return ParseInteger(ref rdr, cache);
                 case MessagePackType.Nil:
@@ -251,15 +271,15 @@ namespace Sellars.Transit.Impl
                 case MessagePackType.String:
                     return cache.CacheRead(ParseString(ref rdr, cache), asDictionaryKey, this);
                 case MessagePackType.Binary:
-                    return ParseBinary(ref rdr, cache);
+                    return ParseBinary(ref rdr, options, cache);
                 case MessagePackType.Array:
-                    return ParseArray(ref rdr, asDictionaryKey, cache, null);
+                    return ParseArray(ref rdr, options, asDictionaryKey, cache, null);
                 case MessagePackType.Map:
-                    return ParseMap(ref rdr, asDictionaryKey, cache, null);
+                    return ParseMap(ref rdr, options, asDictionaryKey, cache, null);
                 case MessagePackType.Extension:
-                    return ParseExtension(ref rdr, cache);
+                    return ParseExtension(ref rdr, options, cache);
                 default:
-                    return ParseUnknown(ref rdr, cache);
+                    return ParseUnknown(ref rdr, options, cache);
             }
         }
 
@@ -275,7 +295,7 @@ namespace Sellars.Transit.Impl
             throw new NotImplementedException($"Not implemented.");
         }
 
-        private object ParseArrayAsDictionary(ref MessagePackReader rdr, bool ignored, ReadCache cache, IDictionaryReadHandler handler, int arrayCountLeftToParse)
+        private object ParseArrayAsDictionary(ref MessagePackReader rdr, MessagePackSerializerOptions options, bool ignored, ReadCache cache, IDictionaryReadHandler handler, int arrayCountLeftToParse)
         {
             // Will it enter here? Maybe for cmap?
             var dictReader = handler.DictionaryReader();
@@ -283,11 +303,19 @@ namespace Sellars.Transit.Impl
             if (arrayCountLeftToParse % 2 == 1)
                 throw new TransitException($"Unexpected Dictionary count in array: {arrayCountLeftToParse}");
 
-            for (; arrayCountLeftToParse >= 0; arrayCountLeftToParse -= 2)
+            options.Security.DepthStep(ref rdr);
+            try
             {
-                var key = ParseVal(ref rdr, true, cache);
-                var value = ParseVal(ref rdr, false, cache);
-                dictReader.Add(dictionary, key, value);
+                for (; arrayCountLeftToParse >= 0; arrayCountLeftToParse -= 2)
+                {
+                    var key = ParseVal(ref rdr, options, true, cache);
+                    var value = ParseVal(ref rdr, options, false, cache);
+                    dictReader.Add(dictionary, key, value);
+                }
+            }
+            finally
+            {
+                rdr.Depth--;
             }
             return dictReader.Complete(dictionary);
         }
