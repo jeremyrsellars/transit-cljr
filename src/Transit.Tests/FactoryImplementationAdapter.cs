@@ -21,7 +21,7 @@ using System.Collections.Generic;
 using System.IO;
 using Sellars.Transit.Alpha;
 
-namespace Beerendonk.Transit.Tests
+namespace Sellars.Transit.Tests
 {
     public class FactoryImplementationAdapter
     {
@@ -43,9 +43,9 @@ namespace Beerendonk.Transit.Tests
                     CreateReader = Sellars.Transit.Alpha.TransitFactory.Reader,
                     CreateWriter = Sellars.Transit.Alpha.TransitFactory.Writer<object>,
                     CreateCustomWriter = Sellars.Transit.Alpha.TransitFactory.Writer<object>,
-                    SetType = typeof(System.Collections.Immutable.IImmutableSet<object>),
-                    DictionaryType = typeof(System.Collections.Immutable.IImmutableDictionary<object, object>),
-                    ListType = typeof(System.Collections.Immutable.IImmutableList<object>),
+                    SetType = typeof(System.Collections.Generic.ISet<object>),
+                    DictionaryType = typeof(System.Collections.Generic.IDictionary<object, object>),
+                    ListType = typeof(System.Collections.Generic.IList<object>),
                 },
                 new FactoryImplementationAdapter
                 {

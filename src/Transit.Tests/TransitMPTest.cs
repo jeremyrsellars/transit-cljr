@@ -10,16 +10,24 @@ using MessagePack;
 using NUnit.Framework;
 using Sellars.Transit.Alpha;
 using Sellars.Transit.Cljr.Alpha;
+using Sellars.Transit.Numerics.Alpha;
 using TransitFactory = Sellars.Transit.Cljr.Alpha.TransitFactory;
 using TransitFormat = Sellars.Transit.Alpha.TransitFactory.Format;
 
-namespace Sellars.Transit.tests
+namespace Sellars.Transit.Tests
 {
-    [TestFixture]
+    [TestFixtureSource(typeof(FactoryImplementationAdapter), nameof(FactoryImplementationAdapter.Adapters))]
     public class TransitMPTest
     {
         // Reading
         public static readonly DateTime Epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+        private FactoryImplementationAdapter adapter;
+
+        public TransitMPTest(FactoryImplementationAdapter adapter)
+        {
+            this.adapter = adapter;
+        }
 
         public IReader readerOf(params object[] things) 
         {
@@ -31,7 +39,7 @@ namespace Sellars.Transit.tests
 
             stream.Position = 0;
 
-            return TransitFactory.Reader(Sellars.Transit.Alpha.TransitFactory.Format.MsgPack, stream);
+            return adapter.CreateReader(Sellars.Transit.Alpha.TransitFactory.Format.MsgPack, stream);
         }
 
         [Test]
@@ -109,13 +117,6 @@ namespace Sellars.Transit.tests
         private long readTimeString(String timeString) {
             return (long)(((DateTime)readerOf("~t" + timeString).Read()) - Epoch).TotalMilliseconds;
         }
-
-        //private SimpleDateFormat formatter(String formatString) {
-
-        //    SimpleDateFormat df = new SimpleDateFormat(formatString);
-        //    df.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
-        //    return df;
-        //}
 
         private void assertReadsFormat(String formatString){
 
@@ -247,7 +248,7 @@ namespace Sellars.Transit.tests
 
             var l = readerOf(thing).Read() as IList;
 
-            Assert.That(l, Is.InstanceOf<IPersistentVector>());
+            Assert.IsInstanceOf(adapter.ListType, l);
             Assert.AreEqual(3, l.Count);
 
             Assert.AreEqual(1L, l[0]);
@@ -265,11 +266,13 @@ namespace Sellars.Transit.tests
                 6.626E-34,
             };
 
-            var l = readerOf(thing).Read() as IPersistentVector;
+            var l = readerOf(thing).Read() as IList;
 
-            for(int i = 0; i < l.count(); i++) {
-                Assert.AreEqual(l.nth(i), thing[i]);
+            for(int i = 0; i < l.Count; i++) {
+                Assert.AreEqual(l[i], thing[i]);
             }
+
+            Assert.IsInstanceOf(adapter.ListType, l);
         }
 
         [Test]
@@ -287,6 +290,7 @@ namespace Sellars.Transit.tests
             var l = readerOf(thing).Read() as IList;
 
             Assert.AreEqual(3, l.Count);
+            Assert.IsInstanceOf(adapter.ListType, l);
 
             Assert.AreEqual(":foo", l[0].ToString());
             Assert.AreEqual(d.Ticks, ((DateTime)l[1]).Ticks);
@@ -310,6 +314,7 @@ namespace Sellars.Transit.tests
                 DateTime DateTime = (DateTime)l[i];
                 Assert.AreEqual(DateTime, da[i]);
             }
+            Assert.IsInstanceOf(adapter.ListType, l);
         }
 
         [Test]
@@ -320,9 +325,10 @@ namespace Sellars.Transit.tests
                 {"b", 4},
             };
 
-            var m = readerOf(thing).Read() as ImmutableDictionary<object,object>;  // to-do: is this the right map type?
+            var m = readerOf(thing).Read() as IDictionary;
 
             Assert.AreEqual(2, m.Count);
+            Assert.IsInstanceOf(adapter.DictionaryType, m);
 
             Assert.AreEqual(2L, m["a"]);
             Assert.AreEqual(4L, m["b"]);
@@ -338,7 +344,7 @@ namespace Sellars.Transit.tests
                 {"b", "~u" + uuid},
             };
 
-            var m = readerOf(thing).Read() as ImmutableDictionary<object,object>;
+            var m = readerOf(thing).Read() as IDictionary;
 
             Assert.AreEqual(2, m.Count);
 
@@ -355,13 +361,14 @@ namespace Sellars.Transit.tests
                 {"~#set", ints },
             };
 
-            var s = readerOf(thing).Read() as IPersistentSet;
+            var s = readerOf(thing).Read() as ICollection;
 
-            Assert.AreEqual(3, s.count());
+            Assert.AreEqual(3, s.Count);
+            Assert.IsInstanceOf(adapter.SetType, s);
 
-            Assert.That(s.contains(1L));
-            Assert.That(s.contains(2L));
-            Assert.That(s.contains(3L));
+            Assert.That((bool)RT.contains(s, 1L));
+            Assert.That((bool)RT.contains(s, 2L));
+            Assert.That((bool)RT.contains(s, 3L));
         }
 
         [Test]
@@ -374,7 +381,7 @@ namespace Sellars.Transit.tests
 
             var l = readerOf(thing).Read() as IList;
 
-            //Assert.That(l instanceof LinkedList);
+            Assert.IsInstanceOf(adapter.ListType, l);
             Assert.AreEqual(3, l.Count);
 
             Assert.AreEqual(1L, l[0]);
@@ -424,8 +431,9 @@ namespace Sellars.Transit.tests
             var m = readerOf(thing).Read() as IDictionary;
 
             Assert.AreEqual(2, m.Count);
+            Assert.IsInstanceOf(adapter.DictionaryType, m);
 
-            var iter = ((IDictionary)m).GetEnumerator();
+            var iter = m.GetEnumerator();
             while (iter.MoveNext())
             {
                 if ((long)iter.Value == 1L)
