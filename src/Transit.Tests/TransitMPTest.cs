@@ -111,7 +111,7 @@ namespace Sellars.Transit.Tests
         [Test]
         public void testReadBigDecimal() {
 
-            Assert.AreEqual(BigDecimal.Parse("42.5"), (BigDecimal)readerOf("~f42.5").Read());
+            Assert.AreEqual(BigDecimal.Parse("42.5"), (BigDecimal)(BigRational)readerOf("~f42.5").Read());
         }
 
         private long readTimeString(String timeString) {

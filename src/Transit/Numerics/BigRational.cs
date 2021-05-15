@@ -962,6 +962,18 @@ namespace Sellars.Transit.Numerics.Alpha
         }
 
         /// <summary>
+        /// Performs an explicit conversion from <see cref="BigRational"/> to <see cref="BigDecimal"/>.
+        /// </summary>
+        /// <param name="value">The value.</param>
+        /// <returns>
+        /// The result of the conversion.
+        /// </returns>
+        public static explicit operator BigDecimal(BigRational value)
+        {
+            return BigDecimal.Divide(new BigDecimal(value.m_numerator, 0), new BigDecimal(value.m_denominator, 0));
+        }
+
+        /// <summary>
         /// Performs an explicit conversion from <see cref="BigRational"/> to <see cref="Single"/>.
         /// </summary>
         /// <param name="value">The value.</param>
@@ -1177,6 +1189,18 @@ namespace Sellars.Transit.Numerics.Alpha
         public static implicit operator BigRational(BigInteger value)
         {
             return new BigRational(value);
+        }
+
+        /// <summary>
+        /// Performs an implicit conversion from <see cref="BigInteger"/> to <see cref="BigRational"/>.
+        /// </summary>
+        /// <param name="value">The value.</param>
+        /// <returns>
+        /// The result of the conversion.
+        /// </returns>
+        public static implicit operator BigRational(BigDecimal value)
+        {
+            return new BigRational(value.Coefficient, BigInteger.Ten.Power(value.Exponent));
         }
 
         /// <summary>
