@@ -29,6 +29,7 @@ using clojure.lang;
 using Sellars.Transit.Alpha;
 using Sellars.Transit.Numerics.Alpha;
 using NUnit.Framework;
+using Sellars.Transit.Tests;
 
 namespace Beerendonk.Transit.Tests
 {
@@ -140,13 +141,13 @@ namespace Beerendonk.Transit.Tests
         public void TestReadDateTime()
         {
             var d = new DateTime(2014, 8, 9, 10, 6, 21, 497, DateTimeKind.Local);
-            var expected = new DateTimeOffset(d).LocalDateTime;
+            var expected = new DateTimeOffset(d).UtcDateTime;
             long javaTime = Beerendonk.Transit.Java.Convert.ToJavaTime(d);
 
             string timeString = JsonParser.FormatDateTime(d);
             Assert.AreEqual(expected, Reader("\"~t" + timeString + "\"").Read<DateTime>());
 
-            Assert.AreEqual(expected, Reader("{\"~#m\": " + javaTime + "}").Read<DateTime>());
+            Assert.AreEqual(expected, Reader("{\"~#m\": " + javaTime + "}").Read<DateTime>().ToUniversalTime());
 
             timeString = new DateTimeOffset(d).UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'");
             Assert.AreEqual(expected, Reader("\"~t" + timeString + "\"").Read<DateTime>());
@@ -241,7 +242,7 @@ namespace Beerendonk.Transit.Tests
         [Test]
         public void TestReadListWithNested()
         {
-            var d = new DateTime(2014, 8, 10, 13, 34, 35);
+            var d = new DateTime(2014, 8, 10, 13, 34, 35, DateTimeKind.Utc);
             String t = JsonParser.FormatDateTime(d);
 
             IList l = Reader("[\"~:foo\", \"~t" + t + "\", \"~?t\"]").Read<IList>();
