@@ -319,8 +319,10 @@ namespace Beerendonk.Transit.Tests
             IDictionary m = Reader("{\"~#cmap\": [{\"~#ratio\":[\"~n1\",\"~n2\"]},1,{\"~#list\":[1,2,3]},2]}").Read<IDictionary>();
 
             Assert.AreEqual(2, m.Count);
+            Assert.IsInstanceOf(adapter.DictionaryType, m);
 
-            foreach (DictionaryEntry e in m)
+            var e = (IDictionaryEnumerator)m.GetEnumerator();
+            while(e.MoveNext())
             {
                 if ((long)e.Value == 1L)
                 {

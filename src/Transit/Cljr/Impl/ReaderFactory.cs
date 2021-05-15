@@ -59,7 +59,7 @@ namespace Sellars.Transit.Cljr.Impl
             builder.Add("set", new ReadHandlers.SetReadHandler());
             builder.Add("list", new ReadHandlers.ListReadHandler());
             builder.Add("ratio", new ReadHandlers.RatioReadHandler());
-            builder.Add("cmap", new CDictionaryReadHandler());
+            builder.Add("cmap", new ReadHandlers.CMapReadHandler());
             builder.Add("link", new LinkReadHandler());
 
             return builder.ToImmutable();
@@ -193,7 +193,7 @@ namespace Sellars.Transit.Cljr.Impl
             {
                 if (dictionaryBuilder == null)
                 {
-                    dictionaryBuilder = new DictionaryBuilder();
+                    dictionaryBuilder = new MapBuilder();
                 }
 
                 if (listBuilder == null)
