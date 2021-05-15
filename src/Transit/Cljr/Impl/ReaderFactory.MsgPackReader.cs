@@ -12,17 +12,21 @@ namespace Sellars.Transit.Cljr.Impl
     /// </summary>
     partial class ReaderFactory
     {
-        private class MessagePackReader : Reader
+        private class MsgPackReader : Reader
         {
-            public MessagePackReader(Stream input, IImmutableDictionary<string, IReadHandler> handlers, IDefaultReadHandler<object> defaultHandler)
+            public MsgPackReader(Stream input, IImmutableDictionary<string, IReadHandler> handlers, IDefaultReadHandler<object> defaultHandler,
+                MessagePackSerializerOptions options)
                 : base(input, handlers, defaultHandler)
             {
+                Options = options;
             }
+
+            public MessagePackSerializerOptions Options { get; }
 
             protected override IParser CreateParser()
             {
                 var msgpackStreamReader = new MessagePackStreamReader(input);
-                return new MessagePackParser(msgpackStreamReader, handlers, defaultHandler, 
+                return new MessagePackParser(msgpackStreamReader, Options, handlers, defaultHandler, 
                     dictionaryBuilder, listBuilder);
             }
         }
