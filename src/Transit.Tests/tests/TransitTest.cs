@@ -707,6 +707,23 @@ namespace Beerendonk.Transit.Tests
 
             Assert.AreEqual("{\"~#cmap\":[{\"foo\":1,\"bar\":2},1,\"~:bar\",2]}", WriteJsonVerbose(d2));
             Assert.AreEqual("[\"~#cmap\",[[\"^ \",\"foo\",1,\"bar\",2],1,\"~:bar\",2]]", WriteJson(d2));
+
+            // A composite-keyed map.  Are composite keys cached?.
+            var dKey = new Dictionary<object, object> { { "foo", "bling" }, { "bar", "blorg" } };
+            var d3 = new []
+            {
+                new Dictionary<object, int> {
+                    { dKey, 1 },
+                    { RT.keyword(null, "bar"), 2 },
+                },
+                new Dictionary<object, int> {
+                    { dKey, 3 },
+                    { RT.keyword(null, "bar"), 4 },
+                },
+            };
+
+            Assert.AreEqual("[{\"~#cmap\":[{\"foo\":\"bling\",\"bar\":\"blorg\"},1,\"~:bar\",2]},{\"~#cmap\":[{\"foo\":\"bling\",\"bar\":\"blorg\"},3,\"~:bar\",4]}]", WriteJsonVerbose(d3));
+            Assert.AreEqual("[[\"~#cmap\",[[\"^ \",\"foo\",\"bling\",\"bar\",\"blorg\"],1,\"~:bar\",2]],[\"^0\",[[\"^ \",\"foo\",\"bling\",\"bar\",\"blorg\"],3,\"^1\",4]]]", WriteJson(d3));
         }
 
         [Test]
