@@ -30,7 +30,7 @@ namespace Sellars.Transit.Cljr.Impl
     /// <summary>
     /// Represents a reader factory.
     /// </summary>
-    internal class ReaderFactory
+    internal partial class ReaderFactory
     {
         /// <summary>
         /// Get the default handlers.
@@ -134,7 +134,7 @@ namespace Sellars.Transit.Cljr.Impl
             IImmutableDictionary<string, IReadHandler> customHandlers,
             IDefaultReadHandler<object> customDefaultHandler)
         {
-            throw new NotImplementedException();
+            return new MessagePackReader(input, Handlers(customHandlers), customDefaultHandler);
         }
 
         private class DefaultReadHandler : IDefaultReadHandler<ITaggedValue>

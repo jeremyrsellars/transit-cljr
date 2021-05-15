@@ -55,6 +55,8 @@ namespace Beerendonk.Transit.Impl.WriteHandlers
             else
                 return false; // unknown type.
 
+            keys = keys ?? Enumerable.Empty<object>();
+
             foreach (var key in keys)
 	        {
                 string tag = abstractEmitter.GetTag(key);

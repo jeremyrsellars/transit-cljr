@@ -50,7 +50,7 @@ namespace Sellars.Transit.Cljr.Impl.ReadHandlers
         /// <exception cref="System.NotSupportedException"></exception>
         public object FromRepresentation(object representation)
         {
-            throw new NotSupportedException();
+            return representation;
         }
 
         private class ListReaderImpl : IListReader

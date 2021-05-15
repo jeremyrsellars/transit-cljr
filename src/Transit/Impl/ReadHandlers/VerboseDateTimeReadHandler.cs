@@ -25,7 +25,25 @@ namespace Beerendonk.Transit.Impl.ReadHandlers
     {
         public object FromRepresentation(object representation)
         {
+            var s = (string)representation;
             DateTime result;
+
+            switch (s.Length)
+            {
+                case 29:
+                    if (DateTime.TryParseExact(s, "yyyy-MM-dd'T'HH:mm:ss.fff-00:00", default, default, out result))
+                        return result;
+                    break;
+                case 24:
+                    if (DateTime.TryParseExact(s, "yyyy-MM-dd'T'HH:mm:ss.fff'Z'", default, default, out result))
+                        return result;
+                    break;
+                case 20:
+                    if (DateTime.TryParseExact(s, "yyyy-MM-dd'T'HH:mm:ss'Z'", default, default, out result))
+                        return result;
+                    break;
+            }
+
             if (!DateTime.TryParse((string)representation, out result))
             {
                 throw new TransitException("Cannot parse representation as a DateTime: " + representation);

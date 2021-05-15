@@ -50,7 +50,7 @@ namespace Beerendonk.Transit.Impl.ReadHandlers
         /// <exception cref="System.NotSupportedException">This method is not supported.</exception>
         public object FromRepresentation(object representation)
         {
-            throw new NotSupportedException();
+            return representation;
         }
 
         private class ListReaderImpl : IListReader
