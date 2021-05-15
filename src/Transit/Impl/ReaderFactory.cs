@@ -29,7 +29,7 @@ namespace Beerendonk.Transit.Impl
     /// <summary>
     /// Represents a reader factory.
     /// </summary>
-    internal class ReaderFactory
+    internal partial class ReaderFactory
     {
         /// <summary>
         /// Get the default handlers.
@@ -133,7 +133,8 @@ namespace Beerendonk.Transit.Impl
             IImmutableDictionary<string, IReadHandler> customHandlers,
             IDefaultReadHandler<object> customDefaultHandler)
         {
-            throw new NotImplementedException();
+            return new MsgPackReader(input, Handlers(customHandlers), customDefaultHandler,
+                MessagePack.MessagePackSerializerOptions.Standard);
         }
 
         private class DefaultReadHandler : IDefaultReadHandler<ITaggedValue>
