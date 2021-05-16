@@ -31,7 +31,7 @@ namespace Beerendonk.Transit.Impl
     /// <summary>
     /// Implements a writer factory.
     /// </summary>
-    internal class WriterFactory
+    internal partial class WriterFactory
     {
         /// <summary>
         /// Get the default handlers.
@@ -134,12 +134,6 @@ namespace Beerendonk.Transit.Impl
             WriteCache wc = new WriteCache(!verboseMode);
 
             return new Writer<T>(output, emitter, wc);
-        }
-
-        public static IWriter<T> GetMsgPackInstance<T>(Stream output, IDictionary<Type, IWriteHandler> customHandlers)
-        {
-            // TODO
-            throw new NotImplementedException();
         }
 
         private class Writer<T> : IWriter<T>

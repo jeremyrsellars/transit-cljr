@@ -105,10 +105,10 @@ namespace Sellars.Transit.Impl
                     object firstVal = ParseVal(ref rdr, options, false, cache);
                     if (firstVal != null)
                     {
-                        if (firstVal is string && (string)firstVal == Constants.DirectoryAsList)
+                        if (firstVal is string fvs && fvs == Constants.DirectoryAsList)
                         {
                             // if the same, build a map w/ rest of array contents
-                            return ParseArrayAsDictionary(ref rdr, options, false, cache, null, count - 1);
+                            return ParseArrayAsDictionary(ref rdr, options, false, cache, dictionaryBuilder, count - 1);
                         }
                         else if (firstVal is Tag)
                         {
@@ -120,11 +120,11 @@ namespace Sellars.Transit.Impl
                                 IReadHandler val_handler;
                                 if (TryGetHandler(tag, out val_handler))
                                 {
-                                    if(rdr.NextMessagePackType == MessagePackType.Map && val_handler is IDictionaryReadHandler dictHandler)
+                                    if (rdr.NextMessagePackType == MessagePackType.Map && val_handler is IDictionaryReadHandler dictHandler)
                                     //if (this.jp.TokenType == JsonToken.StartObject && val_handler is IDictionaryReadHandler)
                                     {
                                         // use map reader to decode value
-                                        val = ParseArrayAsDictionary(ref rdr, options, false, cache, dictHandler, count - 1);
+                                        val = ParseArrayAsDictionary(ref rdr, options, false, cache, dictHandler.DictionaryReader(), count - 1);
                                     }
                                     //else if (this.jp.TokenType == JsonToken.StartArray && val_handler is IListReadHandler)
                                     else if (rdr.NextMessagePackType == MessagePackType.Array && val_handler is IListReadHandler listHandler)
@@ -295,18 +295,20 @@ namespace Sellars.Transit.Impl
             throw new NotImplementedException($"Not implemented.");
         }
 
-        private object ParseArrayAsDictionary(ref MessagePackReader rdr, MessagePackSerializerOptions options, bool ignored, ReadCache cache, IDictionaryReadHandler handler, int arrayCountLeftToParse)
+        private object ParseArrayAsDictionary(ref MessagePackReader rdr, MessagePackSerializerOptions options, bool ignored, ReadCache cache, IDictionaryReader dictReader, int arrayCountLeftToParse)
         {
+            if (dictReader == null)
+                throw new ArgumentNullException(nameof(dictReader));
+
             // Will it enter here? Maybe for cmap?
-            var dictReader = handler.DictionaryReader();
             var dictionary = dictReader.Init();
-            if (arrayCountLeftToParse % 2 == 1)
-                throw new TransitException($"Unexpected Dictionary count in array: {arrayCountLeftToParse}");
+            //if (arrayCountLeftToParse % 2 == 1)
+            //    throw new TransitException($"Unexpected Dictionary count in array: {arrayCountLeftToParse}");
 
             options.Security.DepthStep(ref rdr);
             try
             {
-                for (; arrayCountLeftToParse >= 0; arrayCountLeftToParse -= 2)
+                for (; arrayCountLeftToParse >= 0; arrayCountLeftToParse -= 1)
                 {
                     var key = ParseVal(ref rdr, options, true, cache);
                     var value = ParseVal(ref rdr, options, false, cache);

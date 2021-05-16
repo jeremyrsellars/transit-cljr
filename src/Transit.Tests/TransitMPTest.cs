@@ -8,7 +8,6 @@ using clojure.lang;
 using MessagePack;
 using NUnit.Framework;
 using Sellars.Transit.Alpha;
-using Sellars.Transit.Cljr.Alpha;
 using Sellars.Transit.Numerics.Alpha;
 using TransitFactory = Sellars.Transit.Cljr.Alpha.TransitFactory;
 using TransitFormat = Sellars.Transit.Alpha.TransitFactory.Format;
@@ -38,7 +37,7 @@ namespace Sellars.Transit.Tests
 
             stream.Position = 0;
 
-            return adapter.CreateReader(Sellars.Transit.Alpha.TransitFactory.Format.MsgPack, stream);
+            return adapter.CreateReader(TransitFormat.MsgPack, stream);
         }
 
         [Test]

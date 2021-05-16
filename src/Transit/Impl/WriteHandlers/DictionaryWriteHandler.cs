@@ -131,7 +131,7 @@ namespace Beerendonk.Transit.Impl.WriteHandlers
         {
             if (StringableKeys(obj))
             {
-                return Enumerable.ToList(DictionaryHelper.CoerceKeyValuePairs(obj));
+                return obj;// Enumerable.ToList(DictionaryHelper.CoerceKeyValuePairs(obj));
             }
             else
             {

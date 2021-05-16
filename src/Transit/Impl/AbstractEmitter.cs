@@ -105,7 +105,7 @@ namespace Beerendonk.Transit.Impl
             return CheckBaseTypes(type, genericImplementedInterfaces);
         }
 
-        private IWriteHandler GetHandler(object obj)
+        protected IWriteHandler GetHandler(object obj)
         {
             Type type = (obj != null) ? obj.GetType() : typeof(NullType);
             return GetHandlerForType(type);

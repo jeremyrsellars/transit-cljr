@@ -7,7 +7,7 @@ This is an implementation of the [Transit Format](http://github.com/cognitect/tr
 There were several reasons that led me to fork the repository instead of use transit-csharp nuget package as-is:
 * There are many changes in the .Net ecosystem since the 2014 [transit-csharp](https://github.com/rickbeerendonk/transit-csharp), including .net 5.  Visual Studio tooling was not confident the library would work in this context.
 * My past attempts to wrap the transit-csharp library for Clojure were unsuccessful due to type visibility/sealed reasons, the increased complexity of .Net generic types, lack of support for non-generic System.Collections types, for example.  Perhaps the issues were my own and not the limitation of the transit-csharp library (or perhaps only small changes would be necessary to the library).
-* I hope to implement the MessagePack format at some point.
+* I wanted to implement the `application/transit+msgpack` format.
 
 ## About the Transit Format
 Transit is a data format and a set of libraries for conveying values between applications written in different languages. This library provides support for marshalling Transit data to/from .Net.
@@ -17,10 +17,11 @@ Transit is a data format and a set of libraries for conveying values between app
 
 This implementation's major.minor version number corresponds to the version of the Transit specification it supports.
 
-JSON and JSON-Verbose are implemented, but more tests need to be written.
-MessagePack is **not** implemented yet. 
+JSON and JSON-Verbose are implemented, but more tests need to be written.  MessagePack is implemented, but is insufficiently tested.
 
-_NOTE: Transit is a work in progress and may evolve based on feedback. As a result, while Transit is a great option for transferring data between applications, it should not yet be used for storing data durably over time. This recommendation will change when the specification is complete._
+> NOTE: Transit is intended primarily as a wire protocol for transferring data between applications. If storing Transit data durably, readers and writers are expected to use the same version of Transit and you are responsible for migrating/transforming/re-storing that data when and if the transit format changes.
+
+– https://github.com/cognitect/transit-format#implementations
 
 ## Releases and Dependency Information
 
@@ -93,7 +94,14 @@ Note: **This is a departure from Beerendonk's Transit-csharp library which conve
 
 Custom handlers may also be useful for other more verbose time representations, such as `System.DateTimeOffset` or Noda Time formats.  However, since these would potentially reduce the cross-platform usefulness of the library, they are not provided out of the box.
 
-## Layered Implementations
+## MIME Types
+
+The MIME type for Transit format data depends on the encoding scheme:
+
+|Encoding|MIME type
+|----|----
+JSON / JSON-Verbose|application/transit+json
+MessagePack|application/transit+msgpack
 
 ## Copyright and License
 Copyright © 2021 Jeremy Sellars.
