@@ -30,8 +30,10 @@ None at this time.
 
 ## Default Type Mapping
 
-|Transit type|Write accepts|Read returns|
-|------------|-------------|------------|
+Transit provides some built-in types and the ability to extend the format to support additional "extension" types.
+
+|Transit type|Write accepts|Read returns (common csharp/cljr)|
+|------------|-------------|---------------------------------|
 |null|null|null|
 |string|System.String|System.String|
 |boolean|System.Boolean|System.Boolean|
@@ -45,14 +47,29 @@ None at this time.
 |uri|System.Uri|System.Uri|
 |uuid|System.Guid|System.Guid|
 |char|System.Char|System.Char|
-|array|T[], System.Collections.Generic.IList<>, clojure.lang.IPersistentVector|clojure.lang.IPersistentVector|
-|list|System.Collections.Generic.IEnumerable<>, clojure.lang.IPersistentVector|clojure.lang.IPersistentVector|
-|set|System.Collections.Generic.ISet<>,clojure.lang.IPersistentSet|clojure.lang.IPersistentSet|
-|map|System.Collections.Generic.IDictionary<,>, clojure.lang.IPersistentMap|clojure.lang.IPersistentMap|
+|array|T[], System.Collections.Generic.IList<>, clojure.lang.IPersistentVector|IList|
+|list|System.Collections.Generic.IEnumerable<>, clojure.lang.IPersistentVector|IList|
+|set|System.Collections.Generic.ISet<>,clojure.lang.IPersistentSet|IEnumerable|
+|map|System.Collections.Generic.IDictionary<,>, clojure.lang.IPersistentMap|IDictionary
 |link|Sellars.TransitCljr.Alpha.Link|Sellars.TransitCljr.Alpha.Link|
 |ratio +|Sellars.TransitCljr.Alpha.Ratio|Sellars.TransitCljr.Alpha.Ratio|
 
 \+ Extension type
+
+Extension types are composed of types that transit understands (ground types, extension types, and your other extension types).  Since this library offers two TransitFactory implementations (friendly to C# and ClojureCLR), it may be helpful to know the specific guarantee of each implementation.  (Building extension types often requires casting `object` to a more useful interface type.)
+
+In general, the scalar types are the same between implementations and collection types are different.  Sellars.Transit.Alpha.TransitFactory uses System.Collections.Generic, while Sellars.Transit.Cljr.Alpha.TransitFactory uses collections from clojure.lang.
+
+### Collection Types
+
+If you wish to provide a ReadHandler that will work for either implementation, use the common interface.  Remember, `IDictionary.GetEnumerator` yields an IDictionaryEnumerator that has `.MoveNext`, `.Key`, `.Value` that can be useful if you wish to enumerate the map.
+
+|Transit type|Read returns (common)|Read (C#)|Read (cljr)|
+|------------|---------------------|---------|-----------|
+|array|`IList`|`IList<object>`|`clojure.lang.IPersistentVector`|
+|list|`IList`|`IList<object>`|`clojure.lang.IPersistentVector`|
+|set|`IEnumerable`,`ISet<object>`|`clojure.lang.IPersistentSet`|
+|map|`IDictionary`|`IImmutableDictionary<object,object>`|`clojure.lang.IPersistentMap`|
 
 ## Layered Implementations
 

@@ -18,6 +18,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using Sellars.Transit.Alpha;
 
 namespace Beerendonk.Transit.Impl.ReadHandlers
@@ -55,12 +56,12 @@ namespace Beerendonk.Transit.Impl.ReadHandlers
 
         private class ListReaderImpl : IListReader
         {
-            Dictionary<object, object> d = null;
+            ImmutableDictionary<object, object>.Builder d;
             object nextKey = null;
 
             public object Init()
             {
-                d = new Dictionary<object, object>();
+                d = ImmutableDictionary<object, object>.Empty.ToBuilder();
                 return this;
             }
 
@@ -80,7 +81,7 @@ namespace Beerendonk.Transit.Impl.ReadHandlers
 
             public object Complete(object list)
             {
-                return d;
+                return d.ToImmutable();
             }
         }
     }

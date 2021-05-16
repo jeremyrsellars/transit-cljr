@@ -17,7 +17,6 @@
 // limitations under the License.
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using Sellars.Transit.Alpha;
 
@@ -28,13 +27,13 @@ namespace Sellars.Transit.Tests
         public string Name { get; set; }
         public Func<TransitFactory.Format, Stream, IReader> CreateReader;
         public Func<TransitFactory.Format, Stream, IWriter<object>> CreateWriter;
-        public Func<TransitFactory.Format, Stream, IDictionary<Type, IWriteHandler>, IWriter<object>> CreateCustomWriter;
-        public Type ListType { get; set; }
-        public Type DictionaryType { get; set; }
-        public Type SetType { get; set; }
+        public Func<TransitFactory.Format, Stream, System.Collections.Generic.IDictionary<Type, IWriteHandler>, IWriter<object>> CreateCustomWriter;
+        public Type[] ListTypeGuarantees { get; set; }
+        public Type[] DictionaryTypeGuarantees { get; set; }
+        public Type[] SetTypeGuarantees { get; set; }
         public override string ToString() => Name;
 
-        public static IEnumerable<FactoryImplementationAdapter> Adapters =>
+        public static System.Collections.Generic.IEnumerable<FactoryImplementationAdapter> Adapters =>
             new[]
             {
                 new FactoryImplementationAdapter
@@ -43,9 +42,19 @@ namespace Sellars.Transit.Tests
                     CreateReader = Sellars.Transit.Alpha.TransitFactory.Reader,
                     CreateWriter = Sellars.Transit.Alpha.TransitFactory.Writer<object>,
                     CreateCustomWriter = Sellars.Transit.Alpha.TransitFactory.Writer<object>,
-                    SetType = typeof(System.Collections.Generic.ISet<object>),
-                    DictionaryType = typeof(System.Collections.Generic.IDictionary<object, object>),
-                    ListType = typeof(System.Collections.Generic.IList<object>),
+                    SetTypeGuarantees = new []{
+                        typeof(System.Collections.IEnumerable),
+                        typeof(System.Collections.Generic.IEnumerable<object>),
+                        typeof(System.Collections.Generic.ISet<object>),
+                    },
+                    DictionaryTypeGuarantees = new []{
+                        typeof(System.Collections.IDictionary),
+                        typeof(System.Collections.Immutable.IImmutableDictionary<object, object>),
+                    },
+                    ListTypeGuarantees = new []{
+                        typeof(System.Collections.IList),
+                        typeof(System.Collections.Generic.IList<object>),
+                    },
                 },
                 new FactoryImplementationAdapter
                 {
@@ -53,9 +62,18 @@ namespace Sellars.Transit.Tests
                     CreateReader = Sellars.Transit.Cljr.Alpha.TransitFactory.Reader,
                     CreateWriter = Sellars.Transit.Cljr.Alpha.TransitFactory.TypedWriter<object>,
                     CreateCustomWriter = Sellars.Transit.Cljr.Alpha.TransitFactory.TypedWriter<object>,
-                    SetType = typeof(clojure.lang.IPersistentSet),
-                    DictionaryType = typeof(clojure.lang.IPersistentMap),
-                    ListType = typeof(clojure.lang.IPersistentVector),
+                    SetTypeGuarantees = new []{
+                        typeof(System.Collections.IEnumerable),
+                        typeof(clojure.lang.IPersistentSet),
+                    },
+                    DictionaryTypeGuarantees = new []{
+                        typeof(System.Collections.IDictionary),
+                        typeof(clojure.lang.IPersistentMap),
+                    },
+                    ListTypeGuarantees = new []{
+                        typeof(System.Collections.IList),
+                        typeof(clojure.lang.IPersistentVector),
+                    },
                 },
             };
     }

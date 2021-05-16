@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using Beerendonk.Transit.Impl;
@@ -248,7 +247,7 @@ namespace Sellars.Transit.Tests
 
             var l = readerOf(thing).Read() as IList;
 
-            Assert.IsInstanceOf(adapter.ListType, l);
+            AssertIsInstanceOfThese(adapter.ListTypeGuarantees, l);
             Assert.AreEqual(3, l.Count);
 
             Assert.AreEqual(1L, l[0]);
@@ -272,7 +271,7 @@ namespace Sellars.Transit.Tests
                 Assert.AreEqual(l[i], thing[i]);
             }
 
-            Assert.IsInstanceOf(adapter.ListType, l);
+            AssertIsInstanceOfThese(adapter.ListTypeGuarantees, l);
         }
 
         [Test]
@@ -290,7 +289,7 @@ namespace Sellars.Transit.Tests
             var l = readerOf(thing).Read() as IList;
 
             Assert.AreEqual(3, l.Count);
-            Assert.IsInstanceOf(adapter.ListType, l);
+            AssertIsInstanceOfThese(adapter.ListTypeGuarantees, l);
 
             Assert.AreEqual(":foo", l[0].ToString());
             Assert.AreEqual(d.Ticks, ((DateTime)l[1]).Ticks);
@@ -314,7 +313,7 @@ namespace Sellars.Transit.Tests
                 DateTime DateTime = (DateTime)l[i];
                 Assert.AreEqual(DateTime, da[i]);
             }
-            Assert.IsInstanceOf(adapter.ListType, l);
+            AssertIsInstanceOfThese(adapter.ListTypeGuarantees, l);
         }
 
         [Test]
@@ -328,7 +327,7 @@ namespace Sellars.Transit.Tests
             var m = readerOf(thing).Read() as IDictionary;
 
             Assert.AreEqual(2, m.Count);
-            Assert.IsInstanceOf(adapter.DictionaryType, m);
+            AssertIsInstanceOfThese(adapter.DictionaryTypeGuarantees, m);
 
             Assert.AreEqual(2L, m["a"]);
             Assert.AreEqual(4L, m["b"]);
@@ -364,7 +363,7 @@ namespace Sellars.Transit.Tests
             var s = readerOf(thing).Read() as ICollection;
 
             Assert.AreEqual(3, s.Count);
-            Assert.IsInstanceOf(adapter.SetType, s);
+            AssertIsInstanceOfThese(adapter.SetTypeGuarantees, s);
 
             Assert.That((bool)RT.contains(s, 1L));
             Assert.That((bool)RT.contains(s, 2L));
@@ -381,7 +380,7 @@ namespace Sellars.Transit.Tests
 
             var l = readerOf(thing).Read() as IList;
 
-            Assert.IsInstanceOf(adapter.ListType, l);
+            AssertIsInstanceOfThese(adapter.ListTypeGuarantees, l);
             Assert.AreEqual(3, l.Count);
 
             Assert.AreEqual(1L, l[0]);
@@ -431,7 +430,7 @@ namespace Sellars.Transit.Tests
             var m = readerOf(thing).Read() as IDictionary;
 
             Assert.AreEqual(2, m.Count);
-            Assert.IsInstanceOf(adapter.DictionaryType, m);
+            AssertIsInstanceOfThese(adapter.DictionaryTypeGuarantees, m);
 
             var iter = m.GetEnumerator();
             while (iter.MoveNext())
@@ -480,6 +479,7 @@ namespace Sellars.Transit.Tests
             stream.Position = 0;
             var r = TransitFactory.Reader(TransitFormat.MsgPack, stream);
             Object o = r.Read();
+            CollectionAssert.AreEqual(l, o as IEnumerable);
         }
 
         [Test]
@@ -502,5 +502,10 @@ namespace Sellars.Transit.Tests
             Assert.AreEqual(Double.NegativeInfinity, (Double)r.Read());
         }
 
+        private static void AssertIsInstanceOfThese(System.Collections.Generic.IEnumerable<Type> types, object actual)
+        {
+            foreach (var type in types)
+                Assert.IsInstanceOf(type, actual);
+        }
     }
 }

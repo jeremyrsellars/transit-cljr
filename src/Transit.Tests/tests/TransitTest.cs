@@ -320,7 +320,7 @@ namespace Beerendonk.Transit.Tests
             IDictionary m = Reader("{\"~#cmap\": [{\"~#ratio\":[\"~n1\",\"~n2\"]},1,{\"~#list\":[1,2,3]},2]}").Read<IDictionary>();
 
             Assert.AreEqual(2, m.Count);
-            Assert.IsInstanceOf(adapter.DictionaryType, m);
+            AssertIsInstanceOfThese(adapter.DictionaryTypeGuarantees, m);
 
             var e = (IDictionaryEnumerator)m.GetEnumerator();
             while(e.MoveNext())
@@ -1039,13 +1039,19 @@ namespace Beerendonk.Transit.Tests
         public void TestEmptySet()
         {
             string str = WriteJson(new HashSet<object>());
-            Assert.IsInstanceOf(adapter.SetType, Reader(str).Read<object>());
+            AssertIsInstanceOfThese(adapter.SetTypeGuarantees, Reader(str).Read<object>());
         }
 
         // The point of this method is to force the input types.
         private static void AssertAreEqual<T>(T expected, T actual)
         {
             Assert.AreEqual(expected, actual);
+        }
+
+        private static void AssertIsInstanceOfThese(IEnumerable<Type> types, object actual)
+        {
+            foreach (var type in types)
+                Assert.IsInstanceOf(type, actual);
         }
     }
 }

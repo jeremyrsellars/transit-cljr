@@ -51,6 +51,7 @@ namespace Sellars.Transit.Cljr.Impl
             builder.Add(typeof(long), integerHandler);
             builder.Add(typeof(short), integerHandler);
             builder.Add(typeof(byte), integerHandler);
+            builder.Add(typeof(BigInt), new ToStringWriteHandler("n"));
             builder.Add(typeof(BigInteger), new ToStringWriteHandler("n"));
             builder.Add(typeof(BigDecimal), new ToStringWriteHandler("f"));
             builder.Add(typeof(float), new FloatWriteHandler());
@@ -69,6 +70,7 @@ namespace Sellars.Transit.Cljr.Impl
             builder.Add(typeof(Quote), new QuoteWriteHandler());
             builder.Add(typeof(ITaggedValue), new TaggedValueWriteHandler());
 
+            builder.Add(typeof(IPersistentSet), new SetWriteHandler());
             builder.Add(typeof(ISet<>), new SetWriteHandler());
             builder.Add(typeof(IEnumerable), new EnumerableWriteHandler());
             builder.Add(typeof(IList<>), new ListWriteHandler());
