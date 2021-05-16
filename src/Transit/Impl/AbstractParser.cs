@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Immutable;
 using Sellars.Transit.Alpha;
+using Sellars.Transit.Util.Alpha;
 
 namespace Beerendonk.Transit.Impl
 {
@@ -32,10 +33,10 @@ namespace Beerendonk.Transit.Impl
         /// </summary>
         /// <param name="value">The value.</param>
         /// <returns></returns>
-        public static string FormatDateTime(DateTime value)
+        public static string FormatUtcDateTime(DateTime value)
         {
             const string dateTimeFormat = "yyyy-MM-dd'T'HH:mm:ss.fff'Z'";
-            return new DateTimeOffset(value).UtcDateTime.ToString(dateTimeFormat);
+            return TimeUtils.ToUtcAssumeUtcForUnspecified(value).ToString(dateTimeFormat);
         }
 
         /// <summary>

@@ -30,6 +30,7 @@ using Sellars.Transit.Alpha;
 using Sellars.Transit.Numerics.Alpha;
 using NUnit.Framework;
 using Sellars.Transit.Tests;
+using Sellars.Transit.Util.Alpha;
 
 namespace Beerendonk.Transit.Tests
 {
@@ -142,9 +143,9 @@ namespace Beerendonk.Transit.Tests
         {
             var d = new DateTime(2014, 8, 9, 10, 6, 21, 497, DateTimeKind.Local);
             var expected = new DateTimeOffset(d).UtcDateTime;
-            long javaTime = Beerendonk.Transit.Java.Convert.ToJavaTime(d);
+            long javaTime = TimeUtils.ToTransitTime(d);
 
-            string timeString = JsonParser.FormatDateTime(d);
+            string timeString = JsonParser.FormatUtcDateTime(d);
             Assert.AreEqual(expected, Reader("\"~t" + timeString + "\"").Read<DateTime>());
 
             Assert.AreEqual(expected, Reader("{\"~#m\": " + javaTime + "}").Read<DateTime>().ToUniversalTime());
@@ -243,7 +244,7 @@ namespace Beerendonk.Transit.Tests
         public void TestReadListWithNested()
         {
             var d = new DateTime(2014, 8, 10, 13, 34, 35, DateTimeKind.Utc);
-            String t = JsonParser.FormatDateTime(d);
+            String t = JsonParser.FormatUtcDateTime(d);
 
             IList l = Reader("[\"~:foo\", \"~t" + t + "\", \"~?t\"]").Read<IList>();
 
@@ -613,8 +614,8 @@ namespace Beerendonk.Transit.Tests
         public void TestWriteDateTime()
         {
             var d = DateTime.Now;
-            String dateString = AbstractParser.FormatDateTime(d);
-            long dateLong = Beerendonk.Transit.Java.Convert.ToJavaTime(d);
+            String dateString = AbstractParser.FormatUtcDateTime(d);
+            long dateLong = TimeUtils.ToTransitTime(d);
             Assert.AreEqual(ScalarVerbose("\"~t" + dateString + "\""), WriteJsonVerbose(d));
             Assert.AreEqual(Scalar("\"~m" + dateLong + "\""), WriteJson(d));
         }

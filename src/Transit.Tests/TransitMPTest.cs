@@ -132,7 +132,7 @@ namespace Sellars.Transit.Tests
         {
             var d = UtcNowToMillisecondGranularity();
 
-            String timeString = AbstractParser.FormatDateTime(d);
+            String timeString = AbstractParser.FormatUtcDateTime(d);
             long t = (long)(d.ToUniversalTime() - Epoch).TotalMilliseconds;
 
             Assert.AreEqual(t, readTimeString(timeString));
@@ -278,7 +278,7 @@ namespace Sellars.Transit.Tests
         public void testReadArrayWithNested() {
 
             DateTime d = UtcNowToMillisecondGranularity();
-            String t = AbstractParser.FormatDateTime(d);
+            String t = AbstractParser.FormatUtcDateTime(d);
 
             var thing = new ArrayList() {
                 "~:foo",
@@ -301,10 +301,10 @@ namespace Sellars.Transit.Tests
                                Epoch.AddMilliseconds(1396909037000l)};
 
             var dates = new ArrayList() {
-                "~t" + AbstractParser.FormatDateTime(da[0]),
-                "~t" + AbstractParser.FormatDateTime(da[1]),
-                "~t" + AbstractParser.FormatDateTime(da[2]),
-                "~t" + AbstractParser.FormatDateTime(da[3]),
+                "~t" + AbstractParser.FormatUtcDateTime(da[0]),
+                "~t" + AbstractParser.FormatUtcDateTime(da[1]),
+                "~t" + AbstractParser.FormatUtcDateTime(da[2]),
+                "~t" + AbstractParser.FormatUtcDateTime(da[3]),
             };
 
             l = readerOf(dates).Read() as IList;
@@ -466,10 +466,12 @@ namespace Sellars.Transit.Tests
         [Test]
         public void testWriteReadTime(){
 
-            DateTime[] da = {//new DateTime(-6106017600000l),
-                    new DateTime(0),
-                    new DateTime(946728000000l),
-                    new DateTime(1396909037000l)};
+            DateTime[] da = {
+                Epoch.AddMilliseconds(-6106017600000l),
+                Epoch.AddMilliseconds(0),
+                Epoch.AddMilliseconds(946728000000l),
+                Epoch.AddMilliseconds(1396909037000l),
+            };
 
             var l = da.ToList();
 

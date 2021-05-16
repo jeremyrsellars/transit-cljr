@@ -16,16 +16,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Sellars.Transit.Alpha;
-using Sellars.Transit.Util.Alpha;
 using System;
+using Sellars.Transit.Util.Alpha;
 
-namespace Beerendonk.Transit.Impl.ReadHandlers
+namespace Sellars.Transit.Alpha.ReadHandlers
 {
     /// <summary>
     /// Represents a <see cref="DateTime"/> read handler.
     /// </summary>
-    internal class DateTimeReadHandler : IReadHandler
+    public class DateTimeLocalReadHandler : IReadHandler
     {
         /// <summary>
         /// Converts a transit value to a <see cref="DateTime"/>.
@@ -50,7 +49,7 @@ namespace Beerendonk.Transit.Impl.ReadHandlers
                 }
             }
 
-            return TimeUtils.FromTransitTime(n);
+            return TimeUtils.FromTransitTime(n).ToLocalTime();
         }
     }
 }

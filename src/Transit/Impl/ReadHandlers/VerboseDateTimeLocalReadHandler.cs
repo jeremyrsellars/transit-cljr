@@ -21,7 +21,7 @@ using Sellars.Transit.Alpha;
 
 namespace Beerendonk.Transit.Impl.ReadHandlers
 {
-    internal class VerboseDateTimeReadHandler : IReadHandler
+    public class VerboseDateTimeLocalReadHandler : IReadHandler
     {
         public object FromRepresentation(object representation)
         {
@@ -49,7 +49,7 @@ namespace Beerendonk.Transit.Impl.ReadHandlers
                 throw new TransitException("Cannot parse representation as a DateTime: " + representation);
             }
 
-            return result;
+            return result.ToLocalTime();
         }
     }
 }

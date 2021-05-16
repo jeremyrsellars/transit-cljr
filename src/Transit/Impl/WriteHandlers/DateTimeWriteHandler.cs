@@ -18,6 +18,7 @@
 
 using System;
 using Sellars.Transit.Alpha;
+using Sellars.Transit.Util.Alpha;
 
 namespace Beerendonk.Transit.Impl.WriteHandlers
 {
@@ -29,7 +30,7 @@ namespace Beerendonk.Transit.Impl.WriteHandlers
 
         public override object Representation(object obj)
         {
-            return Java.Convert.ToJavaTime((DateTime)obj);
+            return TimeUtils.ToTransitTime(TimeUtils.ToUtcAssumeUtcForUnspecified((DateTime)obj));
         }
 
         public override string StringRepresentation(object obj)
@@ -51,7 +52,7 @@ namespace Beerendonk.Transit.Impl.WriteHandlers
 
             public object Representation(object obj)
             {
-                return AbstractParser.FormatDateTime((DateTime)obj);
+                return AbstractParser.FormatUtcDateTime((DateTime)obj);
             }
 
             public string StringRepresentation(object obj)

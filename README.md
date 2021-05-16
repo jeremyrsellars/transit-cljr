@@ -43,7 +43,7 @@ Transit provides some built-in types and the ability to extend the format to sup
 |symbol|clojure.lang.Symbol|clojure.lang.Symbol|
 |big decimal|_not implemented_|Sellars.TransitCljr.Numerics.Alpha|
 |big integer|clojure.lang.BigInteger|clojure.lang.BigInteger|
-|time|System.DateTime|System.DateTime|
+|time|System.DateTime|System.DateTime (kind=utc)|
 |uri|System.Uri|System.Uri|
 |uuid|System.Guid|System.Guid|
 |char|System.Char|System.Char|
@@ -70,6 +70,28 @@ If you wish to provide a ReadHandler that will work for either implementation, u
 |list|`IList`|`IList<object>`|`clojure.lang.IPersistentVector`|
 |set|`IEnumerable`,`ISet<object>`|`clojure.lang.IPersistentSet`|
 |map|`IDictionary`|`IImmutableDictionary<object,object>`|`clojure.lang.IPersistentMap`|
+
+
+## Dates
+
+In the Transit specification, times are represented in UTC.  Transit 0.8.4 offers only UTC times, but in .Net, System.DateTime can have 3 kinds:
+
+|System.DateTimeKind|Writer behavior|
+|----|----|
+|Utc|Date is written as-is (to the millisecond)|
+|Unspecified|Same as UTC|
+|Local|Converted to UTC|
+
+Reading dates.  Since transit uses UTC, this is the default in transit-cljr.
+
+If you wish the reader to convert the dates to local on deserialization,
+consider using the provided custom readers: `DateTimeLocalReadHandler` and `VerboseDateTimeLocalReadHandler`.
+These custom handlers may be supplied when creating the reader, 
+for example, `TransitFactory.Writer<T>(Format type, Stream output, IDictionary<Type, IWriteHandler> customHandlers)`.
+
+Note: **This is a departure from Beerendonk's Transit-csharp library which converted the times to local on reading.**  When migrating from transit-csharp, or if your serialization and deserialization libraries are different, please ensure the times are communicated correctly in this regard.
+
+Custom handlers may also be useful for other more verbose time representations, such as `System.DateTimeOffset` or Noda Time formats.  However, since these would potentially reduce the cross-platform usefulness of the library, they are not provided out of the box.
 
 ## Layered Implementations
 
