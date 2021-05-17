@@ -56,6 +56,7 @@ namespace Sellars.Transit.Impl
                 case MessagePackType.Integer:
                     return ParseInteger(ref rdr, cache);
                 case MessagePackType.Nil:
+                    rdr.ReadNil();
                     return null;
                 case MessagePackType.Boolean:
                     return ParseBoolean(ref rdr, cache);
@@ -263,6 +264,7 @@ namespace Sellars.Transit.Impl
                 case MessagePackType.Integer:
                     return ParseInteger(ref rdr, cache);
                 case MessagePackType.Nil:
+                    rdr.ReadNil();
                     return null;
                 case MessagePackType.Boolean:
                     return ParseBoolean(ref rdr, cache);
