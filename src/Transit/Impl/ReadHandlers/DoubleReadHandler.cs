@@ -38,7 +38,7 @@ namespace Beerendonk.Transit.Impl.ReadHandlers
         {
             double result;
 
-            if (!double.TryParse((string)representation, NumberStyles.Number, CultureInfo.InvariantCulture, out result))
+            if (!double.TryParse((string)representation, NumberStyles.Number | NumberStyles.AllowExponent, CultureInfo.InvariantCulture, out result))
             {
                 throw new TransitException("Cannot parse representation as a double: " + representation);
             }
