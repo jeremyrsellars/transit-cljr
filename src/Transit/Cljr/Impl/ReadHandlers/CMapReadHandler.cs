@@ -69,7 +69,7 @@ namespace Sellars.Transit.Cljr.Impl.ReadHandlers
             {
                 if (!isKey)
                 {
-                    m.conj(new MapEntry (nextKey, item));
+                    m = m.conj(new MapEntry (nextKey, item));
                     nextKey = null;
                 }
                 else
