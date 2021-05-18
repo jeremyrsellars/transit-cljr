@@ -19,13 +19,12 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.IO;
 using System.Linq;
 using Beerendonk.Transit.Impl;
 using Sellars.Transit.Alpha;
-using System.IO.Pipelines;
 using MessagePack;
 using Sellars.Transit.Util;
+using System.Buffers;
 
 namespace Sellars.Transit.Impl
 {
@@ -38,20 +37,26 @@ namespace Sellars.Transit.Impl
         private static readonly long JsonIntMax = (long)Math.Pow(2, 53);
         private static readonly long JsonIntMin = -JsonIntMax;
 
-        private PipeWriter pipeWriter;
+        private IBufferWriter<byte> bufferWriter;
+        private readonly Action flush;
 
-        public MessagePackEmitter(Stream stream, IImmutableDictionary<Type, IWriteHandler> handlers)
+        public MessagePackEmitter(IBufferWriter<byte> writer, Action flush, IImmutableDictionary<Type, IWriteHandler> handlers)
             : base(handlers)
         {
-            pipeWriter = PipeWriter.Create(stream, new StreamPipeWriterOptions(leaveOpen: true));
+            bufferWriter = writer;
+            this.flush = flush;
         }
 
         public override void Emit(object obj, bool asDictionaryKey, WriteCache cache)
         {
-            var writer = new MessagePackWriter(pipeWriter);
+            var writer = new MessagePackWriter(bufferWriter);
+            Emit(ref writer, obj, asDictionaryKey, cache);
+            FlushWriter(ref writer);
+        }
+        
+        public void Emit(ref MessagePackWriter writer, object obj, bool asDictionaryKey, WriteCache cache)
+        {
             MarshalTop(ref writer, obj, cache);
-            writer.Flush();
-            pipeWriter.FlushAsync();
         }
         
         protected void EmitTagged(ref MessagePackWriter writer, string t, object obj, bool ignored, WriteCache cache)
@@ -211,7 +216,7 @@ namespace Sellars.Transit.Impl
                             EmitEncoded(ref writer, t, h, o, asDictionaryKey, cache);
                         }
                     }
-                    FlushWriter();
+                    FlushWriter(ref writer);
                 }
             }
 
@@ -221,7 +226,7 @@ namespace Sellars.Transit.Impl
             }
         }
 
-        protected void MarshalTop(ref MessagePackWriter writer, object obj, WriteCache cache)
+        public void MarshalTop(ref MessagePackWriter writer, object obj, WriteCache cache)
         {
             IWriteHandler handler = GetHandler(obj);
             if (handler == null)
@@ -329,8 +334,13 @@ namespace Sellars.Transit.Impl
 
         public override void FlushWriter()
         {
-            //jsonWriter.Flush();
-            var _ = pipeWriter.FlushAsync();
+            flush?.Invoke();
+        }
+
+        public void FlushWriter(ref MessagePackWriter writer)
+        {
+            writer.Flush();
+            flush?.Invoke();
         }
 
         public override bool PrefersStrings()
@@ -356,90 +366,79 @@ namespace Sellars.Transit.Impl
 
         protected override void EmitDictionary(IEnumerable<KeyValuePair<object, object>> keyValuePairs, bool ignored, WriteCache cache)
         {
-            var writer = new MessagePackWriter(pipeWriter);
+            var writer = new MessagePackWriter(bufferWriter);
             EmitDictionary(ref writer, keyValuePairs, ignored, cache);
-            writer.Flush();
-            pipeWriter.FlushAsync();
+            FlushWriter(ref writer);
         }
 
         public override void EmitNull(bool asDictionaryKey, WriteCache cache)
         {
-            var writer = new MessagePackWriter(pipeWriter);
+            var writer = new MessagePackWriter(bufferWriter);
             EmitNull(ref writer, asDictionaryKey, cache);
-            writer.Flush();
-            pipeWriter.FlushAsync();
+            FlushWriter(ref writer);
         }
 
         public override void EmitString(string prefix, string tag, string s, bool asDictionaryKey, WriteCache cache)
         {
-            var writer = new MessagePackWriter(pipeWriter);
+            var writer = new MessagePackWriter(bufferWriter);
             EmitString(ref writer, prefix, tag, s, asDictionaryKey, cache);
-            writer.Flush();
-            pipeWriter.FlushAsync();
+            FlushWriter(ref writer);
         }
 
         public override void EmitBoolean(bool b, bool asDictionaryKey, WriteCache cache)
         {
-            var writer = new MessagePackWriter(pipeWriter);
+            var writer = new MessagePackWriter(bufferWriter);
             EmitBoolean(ref writer, b, asDictionaryKey, cache);
-            writer.Flush();
-            pipeWriter.FlushAsync();
+            FlushWriter(ref writer);
         }
 
         public override void EmitInteger(object o, bool asDictionaryKey, WriteCache cache)
         {
-            var writer = new MessagePackWriter(pipeWriter);
+            var writer = new MessagePackWriter(bufferWriter);
             EmitInteger(ref writer, o, asDictionaryKey, cache);
-            writer.Flush();
-            pipeWriter.FlushAsync();
+            FlushWriter(ref writer);
         }
 
         public override void EmitInteger(long i, bool asDictionaryKey, WriteCache cache)
         {
-            var writer = new MessagePackWriter(pipeWriter);
+            var writer = new MessagePackWriter(bufferWriter);
             EmitInteger(ref writer, i, asDictionaryKey, cache);
-            writer.Flush();
-            pipeWriter.FlushAsync();
+            FlushWriter(ref writer);
         }
 
         public override void EmitDouble(object d, bool asDictionaryKey, WriteCache cache)
         {
-            var writer = new MessagePackWriter(pipeWriter);
+            var writer = new MessagePackWriter(bufferWriter);
             EmitDouble(ref writer, d, asDictionaryKey, cache);
-            writer.Flush();
-            pipeWriter.FlushAsync();
+            FlushWriter(ref writer);
         }
 
         public override void EmitDouble(float d, bool asDictionaryKey, WriteCache cache)
         {
-            var writer = new MessagePackWriter(pipeWriter);
+            var writer = new MessagePackWriter(bufferWriter);
             EmitDouble(ref writer, d, asDictionaryKey, cache);
-            writer.Flush();
-            pipeWriter.FlushAsync();
+            FlushWriter(ref writer);
         }
 
         public override void EmitDouble(double d, bool asDictionaryKey, WriteCache cache)
         {
-            var writer = new MessagePackWriter(pipeWriter);
+            var writer = new MessagePackWriter(bufferWriter);
             EmitDouble(ref writer, d, asDictionaryKey, cache);
-            writer.Flush();
-            pipeWriter.FlushAsync();
+            FlushWriter(ref writer);
         }
 
         public override void EmitBinary(object b, bool asDictionaryKey, WriteCache cache)
         {
-            var writer = new MessagePackWriter(pipeWriter);
+            var writer = new MessagePackWriter(bufferWriter);
             EmitBinary(ref writer, b, asDictionaryKey, cache);
-            writer.Flush();
-            pipeWriter.FlushAsync();
+            FlushWriter(ref writer);
         }
 
         public override void EmitListStart(long size)
         {
-            var writer = new MessagePackWriter(pipeWriter);
+            var writer = new MessagePackWriter(bufferWriter);
             EmitListStart(ref writer, size);
-            writer.Flush();
-            pipeWriter.FlushAsync();
+            FlushWriter(ref writer);
         }
 
         public override void EmitListEnd()
@@ -448,17 +447,15 @@ namespace Sellars.Transit.Impl
 
         public override void EmitDictionaryStart(long size)
         {
-            var writer = new MessagePackWriter(pipeWriter);
+            var writer = new MessagePackWriter(bufferWriter);
             EmitDictionaryStart(ref writer, size);
-            writer.Flush();
-            pipeWriter.FlushAsync();
+            FlushWriter(ref writer);
         }
 
         public override void EmitDictionaryEnd()
         {
-            var writer = new MessagePackWriter(pipeWriter);
-            writer.Flush();
-            pipeWriter.FlushAsync();
+            var writer = new MessagePackWriter(bufferWriter);
+            FlushWriter(ref writer);
         }
 
         #endregion

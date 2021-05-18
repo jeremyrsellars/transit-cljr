@@ -33,7 +33,9 @@ namespace Beerendonk.Transit.Impl
         public static IWriter<T> GetMsgPackInstance<T>(Stream output, IDictionary<Type, IWriteHandler> customHandlers)
         {
             IImmutableDictionary<Type, IWriteHandler> handlers = Handlers(customHandlers);
-            MessagePackEmitter emitter = new MessagePackEmitter(output, handlers);
+
+            var bufferWriter = new StreamBufferWriter(output);
+            var emitter = new MessagePackEmitter(bufferWriter, bufferWriter.Flush, handlers);
 
             SetSubHandler(handlers, emitter);
             WriteCache wc = new WriteCache();

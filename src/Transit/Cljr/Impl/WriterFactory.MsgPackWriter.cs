@@ -17,6 +17,7 @@
 // limitations under the License.
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
@@ -31,10 +32,34 @@ namespace Sellars.Transit.Cljr.Impl
     /// </summary>
     internal partial class WriterFactory
     {
+        /// <summary>
+        /// Gets a MsgPack writer for the specified stream.
+        /// When output stream is not a IBufferWriter of byte, 
+        /// wraps output with <c>StreamBufferWriter</c>.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="output"></param>
+        /// <param name="customHandlers"></param>
+        /// <returns></returns>
         internal static IWriter<T> GetMsgPackInstance<T>(Stream output, IDictionary<Type, IWriteHandler> customHandlers)
         {
             IImmutableDictionary<Type, IWriteHandler> handlers = Handlers(customHandlers);
-            MessagePackEmitter emitter = new MessagePackEmitter(output, handlers);
+            IBufferWriter<byte> bufferWriter;
+            Action flush;
+
+            if (output is IBufferWriter<byte> bw)
+            {
+                bufferWriter = bw;
+                flush = output.Flush;
+            }
+            else
+            {
+                var streamBufferWriter = new StreamBufferWriter(output);
+                bufferWriter = streamBufferWriter;
+                flush = streamBufferWriter.Flush;
+            }
+
+            var emitter = new MessagePackEmitter(bufferWriter, flush, handlers);
 
             SetSubHandler(handlers, emitter);
             WriteCache wc = new WriteCache();
