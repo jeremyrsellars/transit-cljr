@@ -185,3 +185,42 @@
         actual (.Complete lr (reduce (fn [t x](.Add lr t x)) (.Init lr) value))]
     (is (= value actual)
         (str "(= " (pr-str value) " " (pr-str actual) ") "))))
+
+(deftest test-transform
+  ; add transform
+  (doseq [fmt formats
+          [input expected] [[1 2]
+                            [{:kw 2} {:kw 4}]
+                            [{3 :kw2} {6 :kw2}]]]
+    (let [stream (MemoryStream.)
+          writer (t/writer stream fmt
+                    {:transform
+                     (fn double [o] 
+                       (if (int? o) 
+                         (* 2 o)
+                         o))})
+          _ (t/write writer input)
+          _ (.set_Position stream 0)
+          reader (t/reader stream fmt)]
+      (is (= expected (t/read reader))))))
+
+(deftest test-default-handlers
+  ; throw when writing an unknown type & no default handler
+  (doseq [fmt formats]
+    (is (thrown? Exception
+          (let [stream (MemoryStream.)
+                writer (t/writer stream fmt)]
+            (t/write writer (Version. 1 2 3 4))))))
+
+  ; add default handlers
+  (doseq [fmt formats]
+    (let [stream (MemoryStream.)
+          writer (t/writer stream fmt
+                    {:default-handler
+                     (t/write-handler
+                       (fn [_] "version")
+                       (fn [v] (.ToString v)))})
+          _ (t/write writer (Version. 1 2 3 4))
+          _ (.set_Position stream 0)
+          reader (t/reader stream fmt)]
+      (is (= (t/tagged-value "version" "1.2.3.4") (t/read reader))))))

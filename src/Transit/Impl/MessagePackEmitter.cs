@@ -40,8 +40,9 @@ namespace Sellars.Transit.Impl
         private IBufferWriter<byte> bufferWriter;
         private readonly Action flush;
 
-        public MessagePackEmitter(IBufferWriter<byte> writer, Action flush, IImmutableDictionary<Type, IWriteHandler> handlers)
-            : base(handlers)
+        public MessagePackEmitter(IBufferWriter<byte> writer, Action flush, IImmutableDictionary<Type, IWriteHandler> handlers,
+            IWriteHandler defaultHandler, Func<object, object> transform)
+            : base(handlers, defaultHandler, transform)
         {
             bufferWriter = writer;
             this.flush = flush;
@@ -179,6 +180,8 @@ namespace Sellars.Transit.Impl
         protected void Marshal(ref MessagePackWriter writer, object o, bool asDictionaryKey, WriteCache cache)
         {
             bool supported = false;
+
+            o = Transform(o);
 
             IWriteHandler h = GetHandler(o);
             if (h != null)

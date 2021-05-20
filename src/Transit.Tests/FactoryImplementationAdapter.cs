@@ -27,7 +27,7 @@ namespace Sellars.Transit.Tests
         public string Name { get; set; }
         public Func<TransitFactory.Format, Stream, IReader> CreateReader;
         public Func<TransitFactory.Format, Stream, IWriter<object>> CreateWriter;
-        public Func<TransitFactory.Format, Stream, System.Collections.Generic.IDictionary<Type, IWriteHandler>, IWriter<object>> CreateCustomWriter;
+        public Func<TransitFactory.Format, Stream, System.Collections.Generic.IDictionary<Type, IWriteHandler>, IWriteHandler, Func<object, object>, IWriter<object>> CreateCustomWriter;
         public Type[] ListTypeGuarantees { get; set; }
         public Type[] DictionaryTypeGuarantees { get; set; }
         public Type[] SetTypeGuarantees { get; set; }

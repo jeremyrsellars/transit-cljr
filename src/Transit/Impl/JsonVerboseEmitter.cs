@@ -30,8 +30,9 @@ namespace Beerendonk.Transit.Impl
     /// </summary>
     internal class JsonVerboseEmitter : JsonEmitter
     {
-        public JsonVerboseEmitter(JsonWriter jsonWriter, IImmutableDictionary<Type, IWriteHandler> handlers)
-            : base(jsonWriter, handlers)
+        public JsonVerboseEmitter(JsonWriter jsonWriter, IImmutableDictionary<Type, IWriteHandler> handlers,
+            IWriteHandler defaultHandler, Func<object, object> transform)
+            : base(jsonWriter, handlers, defaultHandler, transform)
         {
         }
 

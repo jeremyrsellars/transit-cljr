@@ -61,7 +61,7 @@ namespace Sellars.Transit.Alpha
         /// <returns>A writer.</returns>
         public static IWriter<T> Writer<T>(Format type, Stream output)
         {
-            return Writer<T>(type, output, null);
+            return Writer<T>(type, output, null, null, null);
         }
         
         /// <summary>
@@ -74,15 +74,16 @@ namespace Sellars.Transit.Alpha
         /// <returns>A writer</returns>
         /// <exception cref="System.NotImplementedException"></exception>
         /// <exception cref="System.ArgumentException">Unknown Writer type:  + type.ToString()</exception>
-        public static IWriter<T> Writer<T>(Format type, Stream output, IDictionary<Type, IWriteHandler> customHandlers)
+        public static IWriter<T> Writer<T>(Format type, Stream output, IDictionary<Type, IWriteHandler> customHandlers,
+            IWriteHandler defaultHandler, Func<object, object> transform)
         {
             switch (type) {
                 case Format.MsgPack:
-                    return WriterFactory.GetMsgPackInstance<T>(output, customHandlers);
+                    return WriterFactory.GetMsgPackInstance<T>(output, customHandlers, defaultHandler, transform);
                 case Format.Json:
-                    return WriterFactory.GetJsonInstance<T>(output, customHandlers, false);
+                    return WriterFactory.GetJsonInstance<T>(output, customHandlers, false, defaultHandler, transform);
                 case Format.JsonVerbose:
-                    return WriterFactory.GetJsonInstance<T>(output, customHandlers, true);
+                    return WriterFactory.GetJsonInstance<T>(output, customHandlers, true, defaultHandler, transform);
                 default:
                     throw new ArgumentException("Unknown Writer type: " + type.ToString());
             }

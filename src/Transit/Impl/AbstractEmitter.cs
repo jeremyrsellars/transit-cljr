@@ -33,11 +33,19 @@ namespace Beerendonk.Transit.Impl
     internal abstract class AbstractEmitter : IEmitter
     {
         private IImmutableDictionary<Type, IWriteHandler> handlers;
+        private readonly IWriteHandler defaultHandler;
+        private readonly Func<object, object> transform;
 
-        public AbstractEmitter(IImmutableDictionary<Type, IWriteHandler> handlers)
+        public AbstractEmitter(IImmutableDictionary<Type, IWriteHandler> handlers,
+            IWriteHandler defaultHandler, Func<object, object> transform)
         {
             this.handlers = handlers;
+            this.defaultHandler = defaultHandler;
+            this.transform = transform;
         }
+
+        protected object Transform(object o) =>
+            transform == null ? o : transform(o);
 
         private IWriteHandler CheckBaseClasses(Type type)
         {
@@ -113,7 +121,7 @@ namespace Beerendonk.Transit.Impl
 
         internal IWriteHandler GetHandlerForType(Type type)
         {
-            IWriteHandler handler = null;
+            IWriteHandler handler;
 
             if (!handlers.TryGetValue(type, out handler))
             {
@@ -130,7 +138,7 @@ namespace Beerendonk.Transit.Impl
                 }
             }
 
-            return handler;
+            return handler ?? defaultHandler;
         }
 
         public string GetTag(object obj)
@@ -288,6 +296,8 @@ namespace Beerendonk.Transit.Impl
         protected void Marshal(object o, bool asDictionaryKey, WriteCache cache)
         {
             bool supported = false;
+
+            o = Transform(o);
 
             IWriteHandler h = GetHandler(o);
             if (h != null) 

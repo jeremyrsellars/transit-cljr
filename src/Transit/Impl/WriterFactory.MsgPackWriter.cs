@@ -30,12 +30,13 @@ namespace Beerendonk.Transit.Impl
     /// </summary>
     internal partial class WriterFactory
     {
-        public static IWriter<T> GetMsgPackInstance<T>(Stream output, IDictionary<Type, IWriteHandler> customHandlers)
+        public static IWriter<T> GetMsgPackInstance<T>(Stream output, IDictionary<Type, IWriteHandler> customHandlers,
+            IWriteHandler defaultHandler, Func<object, object> transform)
         {
             IImmutableDictionary<Type, IWriteHandler> handlers = Handlers(customHandlers);
 
             var bufferWriter = new StreamBufferWriter(output);
-            var emitter = new MessagePackEmitter(bufferWriter, bufferWriter.Flush, handlers);
+            var emitter = new MessagePackEmitter(bufferWriter, bufferWriter.Flush, handlers, defaultHandler, transform);
 
             SetSubHandler(handlers, emitter);
             WriteCache wc = new WriteCache();

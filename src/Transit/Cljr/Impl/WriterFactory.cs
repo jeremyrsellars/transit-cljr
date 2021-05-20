@@ -116,7 +116,8 @@ namespace Sellars.Transit.Cljr.Impl
             return verboseHandlersBuilder.ToImmutable();
         }
 
-        public static IWriter<T> GetJsonInstance<T>(Stream output, IDictionary<Type, IWriteHandler> customHandlers, bool verboseMode)
+        public static IWriter<T> GetJsonInstance<T>(Stream output, IDictionary<Type, IWriteHandler> customHandlers, bool verboseMode,
+            IWriteHandler defaultHandler, Func<object, object> transform)
         {
             TextWriter textWriter = new StreamWriter(output);
             JsonWriter jsonWriter = new JsonTextWriter(textWriter);
@@ -124,11 +125,11 @@ namespace Sellars.Transit.Cljr.Impl
             JsonEmitter emitter;
             if (verboseMode)
             {
-                emitter = new JsonVerboseEmitter(jsonWriter, GetVerboseHandlers(handlers));
+                emitter = new JsonVerboseEmitter(jsonWriter, GetVerboseHandlers(handlers), defaultHandler, transform);
             }
             else
             {
-                emitter = new JsonEmitter(jsonWriter, handlers);
+                emitter = new JsonEmitter(jsonWriter, handlers, defaultHandler, transform);
             }
 
             SetSubHandler(handlers, emitter);

@@ -419,11 +419,12 @@ namespace Beerendonk.Transit.Tests
 
         #region Writing
 
-        public string Write(object obj, TransitFactory.Format format, IDictionary<Type, IWriteHandler> customHandlers)
+        public string Write(object obj, TransitFactory.Format format, IDictionary<Type, IWriteHandler> customHandlers = null,
+            IWriteHandler defaultHandler = null, Func<object, object> transform = null)
         {
             using (Stream output = new MemoryStream())
             {
-                IWriter<object> w = adapter.CreateCustomWriter(format, output, customHandlers);
+                IWriter<object> w = adapter.CreateCustomWriter(format, output, customHandlers, null, null);
                 w.Write(obj);
 
                 output.Position = 0;

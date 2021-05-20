@@ -52,11 +52,14 @@ namespace Sellars.Transit.Cljr.Alpha
             return TypedWriter<T>(type, output, null);
         }
 
-        public static IWriter Writer(Format type, Stream output, object customHandlers) =>
+        public static IWriter Writer(Format type, Stream output, object customHandlers,
+            IWriteHandler defaultHandler = null, Func<object, object> transform = null) =>
             new TypedWriterWrapper<object>(TypedWriter<object>(type, output,
                 customHandlers is object handlers
                 ? DictionaryHelper.CoerceDictionary<Type, IWriteHandler>(handlers)
-                : null));
+                : null,
+                defaultHandler,
+                transform));
 
         /// <summary>
         /// Creates a writer instance.
@@ -68,15 +71,19 @@ namespace Sellars.Transit.Cljr.Alpha
         /// <returns>A writer</returns>
         /// <exception cref="System.NotImplementedException"></exception>
         /// <exception cref="System.ArgumentException">Unknown Writer type:  + type.ToString()</exception>
-        internal static IWriter<T> TypedWriter<T>(Format type, Stream output, IDictionary<Type, IWriteHandler> customHandlers)
+        internal static IWriter<T> TypedWriter<T>(Format type, Stream output, IDictionary<Type, IWriteHandler> customHandlers,
+            IWriteHandler defaultHandler = null, Func<object,object> transform = null)
         {
             switch (type) {
                 case Format.MsgPack:
-                    return WriterFactory.GetMsgPackInstance<T>(output, customHandlers);
+                    return WriterFactory.GetMsgPackInstance<T>(output, customHandlers,
+                        defaultHandler, transform);
                 case Format.Json:
-                    return WriterFactory.GetJsonInstance<T>(output, customHandlers, false);
+                    return WriterFactory.GetJsonInstance<T>(output, customHandlers, false,
+                        defaultHandler, transform);
                 case Format.JsonVerbose:
-                    return WriterFactory.GetJsonInstance<T>(output, customHandlers, true);
+                    return WriterFactory.GetJsonInstance<T>(output, customHandlers, true,
+                        defaultHandler, transform);
                 default:
                     throw new ArgumentException("Unknown Writer type: " + type.ToString());
             }

@@ -41,7 +41,8 @@ namespace Sellars.Transit.Cljr.Impl
         /// <param name="output"></param>
         /// <param name="customHandlers"></param>
         /// <returns></returns>
-        internal static IWriter<T> GetMsgPackInstance<T>(Stream output, IDictionary<Type, IWriteHandler> customHandlers)
+        internal static IWriter<T> GetMsgPackInstance<T>(Stream output, IDictionary<Type, IWriteHandler> customHandlers,
+            IWriteHandler defaultHandler, Func<object, object> transform)
         {
             IImmutableDictionary<Type, IWriteHandler> handlers = Handlers(customHandlers);
             IBufferWriter<byte> bufferWriter;
@@ -59,7 +60,8 @@ namespace Sellars.Transit.Cljr.Impl
                 flush = streamBufferWriter.Flush;
             }
 
-            var emitter = new MessagePackEmitter(bufferWriter, flush, handlers);
+            var emitter = new MessagePackEmitter(bufferWriter, flush, handlers,
+                defaultHandler, transform);
 
             SetSubHandler(handlers, emitter);
             WriteCache wc = new WriteCache();

@@ -35,8 +35,9 @@ namespace Beerendonk.Transit.Impl
 
         protected readonly JsonWriter jsonWriter;
 
-        public JsonEmitter(JsonWriter jsonWriter, IImmutableDictionary<Type, IWriteHandler> handlers)
-            : base(handlers)
+        public JsonEmitter(JsonWriter jsonWriter, IImmutableDictionary<Type, IWriteHandler> handlers,
+            IWriteHandler defaultHandler, Func<object, object> transform)
+            : base(handlers, defaultHandler, transform)
         {
             this.jsonWriter = jsonWriter;
         }

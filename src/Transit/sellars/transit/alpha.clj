@@ -125,12 +125,18 @@
        (let [handler-map (if (instance? HandlerMapContainer handlers)
                            (handler-map handlers)
                            (merge default-write-handlers handlers))]
-         (Writer. (TransitFactory/Writer (transit-format type) out handler-map #_#_ default-handler
+         (Writer. (TransitFactory/Writer (transit-format type) out handler-map default-handler
                     (when transform
-                      (reify Function
-                        (apply [_ x]
-                          (transform x)))))))
-       (throw (ex-info "Type must be :json, :json-verbose or :msgpack" {:type type})))))
+                      (condp instance? transform
+                        |System.Func`2[System.Object,System.Object]|
+                        transform
+
+                        clojure.lang.IFn
+                        (sys-func [Object Object] [x] (transform x))
+                        
+                        (throw (ex-info (str "Invalid transform. Must be Func<object,object> or fn. " (class transform))
+                                        {:transform transform})))))))
+       (throw (ex-info "Type must be :json, :json-verbose, or :msgpack" {:type type})))))
 
 (defn write
   "Writes a value to a transit writer."
