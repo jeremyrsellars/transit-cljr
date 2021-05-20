@@ -33,7 +33,8 @@
 (defn- to-equatable-type
   [x]
   (condp instance? x
-    Double           (if (Double/IsNaN x) "##NaN")
+    Double           (if (Double/IsNaN x) "##NaN") ; ##NaN never equals ##NaN
+    Char             (int x) ; https://clojure.atlassian.net/browse/CLJCLR-112  Chars and ints collide in maps
 
     x))
 
@@ -59,10 +60,10 @@
   [x]
   (postwalk to-transit-type x))
 
-
 (defn test-round-trip
   [fmt value]
-  (let [stream   (MemoryStream. 2000)
+  (let [value    (walk-to-equatable-types value)
+        stream   (MemoryStream. 2000)
         out      (doto stream (.set_Position 0))
         w        (t/writer out fmt)
         _        (t/write w value)
