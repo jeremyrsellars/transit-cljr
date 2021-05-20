@@ -26,6 +26,8 @@
 
 (def formats #{:json :json-verbose :msgpack})
 
+(defonce gen-count-ref (atom 100))
+
 (s/def ::t/format formats)
 
 (s/def ::example (s/with-gen any? #(s/gen some?)))        ; nil can be tested elsewhere.  `any?` put too many nils in the sample.
@@ -45,7 +47,7 @@
 (defn gen-sample
  [kw]
  (try
-   (map walk-to-equatable-types (gen/sample (s/gen kw) 10000))
+   (map walk-to-equatable-types (gen/sample (s/gen kw) @gen-count-ref))
    (catch Exception e
      (throw (Exception. (str "gen-sample " (.ToString e)) e)))))  
 
@@ -121,8 +123,8 @@
     (is (= total check-passed)
       (when-not (= total check-passed)
         (pr-str (map stest/abbrev-result (take-last 5 results)))))))
-(deftest check-round-trip10000
-  (let [results (stest/check `round-trip {::stc/opts {:num-tests 10000}})
+(deftest check-round-trip
+  (let [results (stest/check `round-trip {::stc/opts {:num-tests @gen-count-ref}})
         {:keys [total check-passed]} (stest/summarize-results results)]
     (is (= total check-passed)
       (when-not (= total check-passed)
@@ -134,8 +136,8 @@
     (is (= total check-passed)
       (when-not (= total check-passed)
         (pr-str (take-last 5 results))))))
-(deftest check-round-trip-verbose10000
-  (let [results (stest/check `round-trip {::stc/opts {:num-tests 10000}})
+(deftest check-round-trip-verbose
+  (let [results (stest/check `round-trip {::stc/opts {:num-tests @gen-count-ref}})
         {:keys [total check-passed]} (stest/summarize-results results)]
     (is (= total check-passed)
       (when-not (= total check-passed)
