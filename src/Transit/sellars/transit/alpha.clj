@@ -17,7 +17,7 @@
    on top of the transit-cljr library."
   (:refer-clojure :exclude [read])
   (:require [clojure.string :as str])
-  (:import [Sellars.Transit.Alpha IWriteHandler IReadHandler IListReadHandler IDictionaryReadHandler
+  (:import [Sellars.Transit.Alpha IWriteHandler IReadHandler IListReadHandler IDictionaryReadHandler IDefaultReadHandler
             IReader IWriter
             IListReader TransitFactory+Format IDictionaryReader]
            [Sellars.Transit.Cljr.Alpha TransitFactory]
@@ -153,6 +153,18 @@
   (reify IReadHandler
     (FromRepresentation [_ o] (from-rep o))))
 
+(defn- custom-default-read-handler
+  "Returns an IDefaultReadHandler.
+  fn-or-IDefaultReadHandler may be a fn like (fn default-read-handler [tag rep]rep)
+  If fn-or-IDefaultReadHandler is already an IDefaultReadHandler, returns fn-or-IDefaultReadHandler.
+  "
+  [fn-or-IDefaultReadHandler]
+  (if (instance? IDefaultReadHandler fn-or-IDefaultReadHandler)
+    fn-or-IDefaultReadHandler
+    (reify IDefaultReadHandler
+      (FromRepresentation [_ tag representation]
+        (fn-or-IDefaultReadHandler tag representation)))))
+
 (defn read-map-handler
   "Creates a Transit MapReadHandler whose FromRepresentation
    and DictionaryReader methods invoke the provided fns."
@@ -225,7 +237,8 @@
              reader (TransitFactory/Reader (transit-format type)
                                            in
                                            handler-map
-                                           default-handler)]
+                                           (when default-handler
+                                             (custom-default-read-handler default-handler)))]
          (Reader. (.SetBuilders ^IReaderSpi reader
                                 (map-builder)
                                 (list-builder))))

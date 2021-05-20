@@ -109,9 +109,9 @@ namespace Sellars.Transit.Cljr.Alpha
         /// A DefaultReadHandler to use for processing encoded values for which there is no read handler
         /// </param>
         /// <returns>A reader</returns>
-        public static IReader Reader(Format type, Stream input, IDefaultReadHandler<object> customDefaultHandler)
+        public static IReader Reader(Format type, Stream input, IDefaultReadHandler customDefaultHandler)
         {
-            return Reader(type, input, null, customDefaultHandler);
+            return Reader(type, input, null, ReaderFactory.DefaultHandler(customDefaultHandler));
         }
 
         private class DeferredJsonReader : IReader, IReaderSpi {
@@ -168,7 +168,7 @@ namespace Sellars.Transit.Cljr.Alpha
         /// <returns>A reader.</returns>
         public static IReader Reader(Format type, Stream input,
                                     object customHandlers,
-                                    IDefaultReadHandler<object> customDefaultHandler) 
+                                    IDefaultReadHandler customDefaultHandler) 
         {
             switch (type) {
                 case Format.Json:
@@ -177,9 +177,9 @@ namespace Sellars.Transit.Cljr.Alpha
                     // JSON parser creation blocks on input stream until 4 bytes
                     // are available to determine character encoding - this is
                     // unexpected, so defer creation until first read
-                    return new DeferredJsonReader(input, CustomHandlers(), customDefaultHandler);
+                    return new DeferredJsonReader(input, CustomHandlers(), ReaderFactory.TypedDefaultHandler(customDefaultHandler));
                 case Format.MsgPack:
-                    return ReaderFactory.GetMsgPackInstance(input, CustomHandlers(), customDefaultHandler);
+                    return ReaderFactory.GetMsgPackInstance(input, CustomHandlers(), ReaderFactory.DefaultHandler(customDefaultHandler));
                 default:
                     throw new ArgumentException("Unknown Reader type: " + type.ToString());
             }
@@ -351,9 +351,9 @@ namespace Sellars.Transit.Cljr.Alpha
         /// Returns the <see cref="IDefaultReadHandler{T}"/> of <see cref="ITaggedValue"/> that is used by default.
         /// </summary>
         /// <returns><see cref="IDefaultReadHandler{T}"/> of <see cref="ITaggedValue"/> instance.</returns>
-        public static IDefaultReadHandler<ITaggedValue> DefaultDefaultReadHandler()
+        public static IDefaultReadHandler DefaultDefaultReadHandler()
         {
-            return ReaderFactory.DefaultDefaultHandler();
+            return ReaderFactory.DefaultHandler(Impl.DefaultReadHandlerAdapter.Adapt(ReaderFactory.DefaultDefaultHandler()));
         }
     }
 }

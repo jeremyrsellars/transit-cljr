@@ -104,9 +104,19 @@ namespace Sellars.Transit.Cljr.Impl
             return handlers;
         }
 
-        private static IDefaultReadHandler<object> DefaultHandler(IDefaultReadHandler<object> customDefaultHandler)
+        public static IDefaultReadHandler DefaultHandler(IDefaultReadHandler customDefaultHandler = null)
         {
-            return customDefaultHandler != null ? customDefaultHandler : DefaultDefaultHandler();
+            if (customDefaultHandler == null)
+                return DefaultReadHandlerAdapter.Adapt(DefaultDefaultHandler());
+            return customDefaultHandler;
+        }
+
+        public static IDefaultReadHandler<object> TypedDefaultHandler(IDefaultReadHandler customDefaultHandler = null)
+        {
+            if (customDefaultHandler == null)
+                return DefaultDefaultHandler();
+            return customDefaultHandler as IDefaultReadHandler<object>
+                ?? DefaultReadHandlerAdapter.Adapt(customDefaultHandler);
         }
 
         /// <summary>
@@ -120,7 +130,7 @@ namespace Sellars.Transit.Cljr.Impl
             IImmutableDictionary<string, IReadHandler> customHandlers,
             IDefaultReadHandler<object> customDefaultHandler)
         {
-            return new JsonReader(input, Handlers(customHandlers), DefaultHandler(customDefaultHandler));
+            return new JsonReader(input, Handlers(customHandlers), customDefaultHandler);
         }
 
         /// <summary>
@@ -132,18 +142,21 @@ namespace Sellars.Transit.Cljr.Impl
         /// <returns>A reader.</returns>
         public static IReader GetMsgPackInstance(Stream input,
             IImmutableDictionary<string, IReadHandler> customHandlers,
-            IDefaultReadHandler<object> customDefaultHandler)
+            IDefaultReadHandler customDefaultHandler)
         {
-            return new MsgPackReader(input, Handlers(customHandlers), customDefaultHandler,
+            return new MsgPackReader(input, Handlers(customHandlers), TypedDefaultHandler(customDefaultHandler),
                 MessagePack.MessagePackSerializerOptions.Standard);
         }
 
-        private class DefaultReadHandler : IDefaultReadHandler<ITaggedValue>
+        private class DefaultReadHandler : IDefaultReadHandler<ITaggedValue>, IDefaultReadHandler
         {
             public ITaggedValue FromRepresentation(string tag, object representation)
             {
                 return TransitFactory.TaggedValue(tag, representation);
             }
+
+            object IDefaultReadHandler.FromRepresentation(string tag, object representation) =>
+                FromRepresentation(tag, representation);
         }
 
         private abstract class Reader : IReader, IReaderSpi

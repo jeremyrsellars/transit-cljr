@@ -212,7 +212,7 @@
                 writer (t/writer stream fmt)]
             (t/write writer (Version. 1 2 3 4))))))
 
-  ; add default handlers
+  ; add default write handler
   (doseq [fmt formats]
     (let [stream (MemoryStream.)
           writer (t/writer stream fmt
@@ -223,4 +223,22 @@
           _ (t/write writer (Version. 1 2 3 4))
           _ (.set_Position stream 0)
           reader (t/reader stream fmt)]
-      (is (= (t/tagged-value "version" "1.2.3.4") (t/read reader))))))
+      (is (= (t/tagged-value "version" "1.2.3.4") (t/read reader)))))
+
+  ; add default write and read handlers
+  (doseq [fmt formats]
+    (let [stream (MemoryStream.)
+          writer (t/writer stream fmt
+                    {:default-handler
+                     (t/write-handler
+                       (fn [_] "version")
+                       (fn [v] (.ToString v)))})
+          _ (t/write writer (Version. 1 2 3 4))
+          _ (.set_Position stream 0)
+          reader (t/reader stream fmt
+                  {:default-handler 
+                   (fn default-read-handler
+                     [tag object]
+                     (is (= tag "version"))
+                     (Version. object))})]
+      (is (= (Version. 1 2 3 4) (t/read reader))))))

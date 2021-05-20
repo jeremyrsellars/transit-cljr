@@ -32,4 +32,19 @@ namespace Sellars.Transit.Alpha
         /// <returns>The resulting generic object.</returns>
         T FromRepresentation(string tag, object representation);
     }
+
+    /// <summary>
+    /// Processes a non-decodable transit value.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public interface IDefaultReadHandler
+    {
+        /// <summary>
+        /// Reads a transit representation that cannot otherwise be read.
+        /// </summary>
+        /// <param name="tag">The transit value's tag.</param>
+        /// <param name="representation">The transit value's representation.</param>
+        /// <returns>The resulting generic object.</returns>
+        object FromRepresentation(string tag, object representation);
+    }
 }
