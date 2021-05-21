@@ -95,7 +95,7 @@
    (reify IWriteHandler
      (Tag [_ _] "with-meta")
      (Representation [_ o]
-       (TransitFactory/taggedValue "array"
+       (TransitFactory/TaggedValue "array"
          [(.-value ^sellars.transit.alpha.WithMeta o)
           (.-meta ^sellars.transit.alpha.WithMeta o)]))
      (StringRepresentation [_ _] nil)

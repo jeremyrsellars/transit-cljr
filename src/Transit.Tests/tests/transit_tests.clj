@@ -94,6 +94,45 @@
         x   (t/read r)]
     (is (= [1 2 3] x))))
 
+(deftest test-basic-with-meta-json
+  (let [out (MemoryStream. 2000)
+        w   (t/writer out :json {:transform t/write-meta})
+        _   (t/write w (with-meta [1 2 3] {:foo 'bar}))
+        in  (doto out (.set_Position 0))
+        r   (t/reader in :json)
+        x   (t/read r)]
+    (is (= [1 2 3] x) (pr-str x))
+    (is (= {:foo 'bar} (meta x)) (pr-str (meta x)))))
+
+(deftest test-basic-with-meta-msgpack
+  (let [out (MemoryStream. 2000)
+        w   (t/writer out :msgpack {:transform t/write-meta})
+        _   (t/write w (with-meta [1 2 3] {:foo 'bar}))
+        in  (doto out (.set_Position 0))
+        r   (t/reader in :msgpack)
+        x   (t/read r)]
+    (is (= [1 2 3] x) (pr-str x))
+    (is (= {:foo 'bar} (meta x)) (pr-str (meta x)))))
+
+(deftest test-symbol-with-meta
+  (let [out (MemoryStream. 2000)
+        w   (t/writer out :json {:transform t/write-meta})
+        _   (t/write w (with-meta 'foo {:bar "baz"}))
+        in  (doto out (.set_Position 0))
+        r   (t/reader in :json)
+        x   (t/read r)]
+    (is (= 'foo x) (pr-str x))
+    (is (= {:bar "baz"} (meta x)) (pr-str (meta x)))))
+
+(deftest test-nested-with-meta
+  (let [out (MemoryStream. 2000)
+        w   (t/writer out :json {:transform t/write-meta})
+        _   (t/write w {:amap (with-meta [1 2 3] {:foo 'bar})})
+        in  (doto out (.set_Position 0))
+        r   (t/reader in :json)
+        x   (t/read r)]
+    (is (= [1 2 3] (:amap x)) (pr-str (:amap x)))
+    (is (= {:foo 'bar} (-> x :amap meta)) (pr-str (-> x :amap meta)))))
 
 (deftest test-basic-msgpack
   (let [out (MemoryStream. 2000)
