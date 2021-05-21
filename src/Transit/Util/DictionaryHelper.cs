@@ -8,6 +8,10 @@ namespace Sellars.Transit.Util
 {
     internal static class DictionaryHelper
     {
+        private static readonly clojure.lang.AtomicReference<ImmutableDictionary<Type, Func<object, KeyValuePair<object, object>>>> coercions =
+            new clojure.lang.AtomicReference<ImmutableDictionary<Type, Func<object, KeyValuePair<object, object>>>>(
+            ImmutableDictionary<Type, Func<object, KeyValuePair<object, object>>>.Empty);
+
         public static Dictionary<TKey, TVal> CoerceDictionary<TKey, TVal>(
             object keyValuePairEnumerable, Func<object, KeyValuePair<object, object>> coerceOrThrow = null)
         {
@@ -81,14 +85,31 @@ namespace Sellars.Transit.Util
             if (item?.GetType() is Type t && t.Name == typeof(KeyValuePair<,>).Name
                 && t.GetGenericTypeDefinition() == typeof(KeyValuePair<,>))
             {
-                kvp = new KeyValuePair<object, object>(
-                    t.GetProperty("Key").GetValue(item),
-                    t.GetProperty("Value").GetValue(item));
+                var coercions = DictionaryHelper.coercions.Get();
+                if (!coercions.TryGetValue(t, out var coercion))
+                {
+                    coercion = MakeCoercionFunc(t.GetGenericArguments());
+                    DictionaryHelper.coercions.CompareAndSet(coercions, coercions.SetItem(t, coercion));
+                }
+                kvp = coercion(item);
                 return true;
+
+                //kvp = new KeyValuePair<object, object>(
+                //    t.GetProperty("Key").GetValue(item),
+                //    t.GetProperty("Value").GetValue(item));
+                //return true;
             }
             kvp = default;
             return false;
         }
+
+        private static Func<object, KeyValuePair<object, object>> MakeCoercionFunc(Type[] types) => 
+            (Func<object, KeyValuePair<object, object>>)
+            typeof(DictionaryHelper).GetMethod(nameof(CoerceGenericKeyValuePair)).MakeGenericMethod(types).CreateDelegate(
+                typeof(Func<object, KeyValuePair<object, object>>));
+
+        public static KeyValuePair<object, object> CoerceGenericKeyValuePair<TKey, TVal>(KeyValuePair<TKey, TVal> kvp) =>
+            new KeyValuePair<object, object>(kvp.Key, kvp.Value);
 
         public static KeyValuePair<object, object> ThrowCannotCoerceKeyValuePair(object item) =>
             throw new NotSupportedException($"Unknown coercion from {item?.GetType()?.FullName ?? "null"} to KeyValuePair.");
