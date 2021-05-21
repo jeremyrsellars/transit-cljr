@@ -89,8 +89,11 @@ namespace Sellars.Transit.Cljr.Impl
             }
         }
 
-        private static IImmutableDictionary<string, IReadHandler> Handlers(IImmutableDictionary<string, IReadHandler> customHandlers) 
+        public static IImmutableDictionary<string, IReadHandler> Handlers(IImmutableDictionary<string, IReadHandler> customHandlers) 
         {
+            if (customHandlers is Alpha.ReadHandlerMap rhm)
+                return rhm;
+
             DisallowOverridingGroundTypes(customHandlers);
             IImmutableDictionary<string, IReadHandler> handlers = DefaultHandlers();
             if (customHandlers != null) 

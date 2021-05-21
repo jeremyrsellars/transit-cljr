@@ -67,11 +67,27 @@ namespace Sellars.Transit.Util
                     yield return new KeyValuePair<object, object>(dentry.Key, dentry.Value);
                 else if (item is clojure.lang.IMapEntry mentry)
                     yield return new KeyValuePair<object, object>(mentry.key(), mentry.val());
+                else if (TryCoerceGenericKeyValuePair(item, out kvp))
+                    yield return kvp;
                 else if (coerceOrThrow != null)
                     yield return coerceOrThrow(item);
                 else
                     throw new NotSupportedException($"Unknown coercion from {item?.GetType()?.FullName ?? "null"} to KeyValuePair.");
             }
+        }
+
+        private static bool TryCoerceGenericKeyValuePair(object item, out KeyValuePair<object, object> kvp)
+        {
+            if (item?.GetType() is Type t && t.Name == typeof(KeyValuePair<,>).Name
+                && t.GetGenericTypeDefinition() == typeof(KeyValuePair<,>))
+            {
+                kvp = new KeyValuePair<object, object>(
+                    t.GetProperty("Key").GetValue(item),
+                    t.GetProperty("Value").GetValue(item));
+                return true;
+            }
+            kvp = default;
+            return false;
         }
 
         public static KeyValuePair<object, object> ThrowCannotCoerceKeyValuePair(object item) =>

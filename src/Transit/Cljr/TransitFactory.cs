@@ -29,6 +29,8 @@ using ReaderFactory = Sellars.Transit.Cljr.Impl.ReaderFactory;
 using WriterFactory = Sellars.Transit.Cljr.Impl.WriterFactory;
 using Sellars.Transit.Util;
 using System.Linq;
+using System.Collections;
+using Sellars.Transit.Cljr.Impl.Alpha;
 
 namespace Sellars.Transit.Cljr.Alpha
 {
@@ -55,11 +57,18 @@ namespace Sellars.Transit.Cljr.Alpha
         public static IWriter Writer(Format type, Stream output, object customHandlers,
             IWriteHandler defaultHandler = null, Func<object, object> transform = null) =>
             new TypedWriterWrapper<object>(TypedWriter<object>(type, output,
-                customHandlers is object handlers
-                ? DictionaryHelper.CoerceDictionary<Type, IWriteHandler>(handlers)
-                : null,
+                WriteHandlers(customHandlers),
                 defaultHandler,
                 transform));
+
+        private static IDictionary<Type, IWriteHandler> WriteHandlers(object customHandlers)
+        {
+            if (customHandlers is WriteHandlerMap whm)
+                return whm;
+            return customHandlers is object handlers
+                ? DictionaryHelper.CoerceDictionary<Type, IWriteHandler>(handlers)
+                : null;
+        }
 
         /// <summary>
         /// Creates a writer instance.
@@ -185,6 +194,7 @@ namespace Sellars.Transit.Cljr.Alpha
             }
 
             IImmutableDictionary<string, IReadHandler> CustomHandlers() =>
+                customHandlers is ReadHandlerMap rhm ? rhm : 
                 DictionaryHelper.CoerceIImmutableDictionary<string, IReadHandler>(customHandlers);
         }
 
@@ -355,5 +365,19 @@ namespace Sellars.Transit.Cljr.Alpha
         {
             return ReaderFactory.DefaultHandler(Impl.DefaultReadHandlerAdapter.Adapt(ReaderFactory.DefaultDefaultHandler()));
         }
+
+        public static WriteHandlerMap WriteHandlerMap(object handlerMap) =>
+            handlerMap is WriteHandlerMap whm
+            ? whm
+            : Impl.Alpha.WriteHandlerMap.Create(
+                DictionaryHelper.CoerceDictionary<Type, IWriteHandler>(handlerMap), 
+                WriterFactory.Handlers); 
+
+        public static ReadHandlerMap ReadHandlerMap(object handlerMap) =>
+            handlerMap is ReadHandlerMap whm
+            ? whm
+            : Impl.Alpha.ReadHandlerMap.Create(
+                DictionaryHelper.CoerceIImmutableDictionary<string, IReadHandler>(handlerMap),
+                ReaderFactory.Handlers);
     }
 }

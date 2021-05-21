@@ -283,7 +283,6 @@
           {}
           types))
 
-#_
 (defn read-handler-map
   "Returns a HandlerMapContainer containing a ReadHandlerMap
   containing all the default handlers for Clojure and Java and any
@@ -293,9 +292,8 @@
   handlers to reader."
   [custom-handlers]
   (HandlerMapContainer.
-   (TransitFactory/readHandlerMap (merge default-read-handlers custom-handlers))))
+    (TransitFactory/ReadHandlerMap (merge default-read-handlers custom-handlers))))
 
-#_
 (defn write-handler-map
   "Returns a HandlerMapContainer containing a WriteHandlerMap
   containing all the default handlers for Clojure and Java and any
@@ -305,7 +303,7 @@
   handlers to writer."
   [custom-handlers]
   (HandlerMapContainer.
-   (TransitFactory/writeHandlerMap (merge default-write-handlers custom-handlers))))
+    (TransitFactory/WriteHandlerMap (merge default-write-handlers custom-handlers))))
 
 (defn write-meta
   "For :transform. Will write any metadata present on the value."

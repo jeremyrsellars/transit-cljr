@@ -23,6 +23,7 @@ using System.IO;
 using Beerendonk.Transit.Impl;
 using Sellars.Transit.Spi.Alpha;
 using clojure.lang;
+using Sellars.Transit.Util;
 
 namespace Sellars.Transit.Alpha
 {
@@ -346,5 +347,19 @@ namespace Sellars.Transit.Alpha
         {
             return ReaderFactory.DefaultDefaultHandler();
         }
+
+        public static Cljr.Impl.Alpha.WriteHandlerMap WriteHandlerMap(object handlerMap) =>
+            handlerMap is Cljr.Impl.Alpha.WriteHandlerMap whm
+            ? whm
+            : Cljr.Impl.Alpha.WriteHandlerMap.Create(
+                DictionaryHelper.CoerceDictionary<Type, IWriteHandler>(handlerMap), 
+                WriterFactory.Handlers);
+
+        public static Cljr.Impl.Alpha.ReadHandlerMap ReadHandlerMap(object handlerMap) =>
+            handlerMap is Cljr.Impl.Alpha.ReadHandlerMap whm
+            ? whm
+            : Cljr.Impl.Alpha.ReadHandlerMap.Create(
+                DictionaryHelper.CoerceIImmutableDictionary<string, IReadHandler>(handlerMap),
+                ReaderFactory.Handlers);
     }
 }

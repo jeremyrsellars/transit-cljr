@@ -27,7 +27,7 @@
         r        (t/reader in fmt)
         actual   (t/read r)]
     (is (Debuggable/Equals value actual)
-        (str "Trouble with " fmt " for "
+        (str "Testing " fmt " for "
              "(= " (pr-str value) " " (pr-str actual) ") "
              s)))))
 
@@ -202,7 +202,8 @@
           _ (t/write writer input)
           _ (.set_Position stream 0)
           reader (t/reader stream fmt)]
-      (is (= expected (t/read reader))))))
+      (is (= expected (t/read reader))
+          (str expected (pr-str expected))))))
 
 (deftest test-default-handlers
   ; throw when writing an unknown type & no default handler
@@ -210,7 +211,8 @@
     (is (thrown? Exception
           (let [stream (MemoryStream.)
                 writer (t/writer stream fmt)]
-            (t/write writer (Version. 1 2 3 4))))))
+            (t/write writer (Version. 1 2 3 4))))
+      "Expected exception when writing an unknown type & no default handler"))
 
   ; add default write handler
   (doseq [fmt formats]
@@ -242,3 +244,29 @@
                      (is (= tag "version"))
                      (Version. object))})]
       (is (= (Version. 1 2 3 4) (t/read reader))))))
+
+(deftest test-handler-maps
+  (let [write-handlers (t/write-handler-map
+                        {Version
+                         (t/write-handler
+                           (fn [_] "version")
+                           (fn [v] (.ToString v)))})
+        read-handlers  (t/read-handler-map
+                        {"version"
+                         (t/read-handler
+                           (fn [rep] (Version. rep)))})]
+    (doseq [fmt formats]
+      (let [value (Version. 1 1 1 1)
+            stream (MemoryStream. 2000)
+            out      (doto stream (.set_Position 0))
+            w        (t/writer out fmt {:handlers write-handlers})
+            _        (t/write w value)
+            in       (doto stream (.set_Position 0))
+            s        (.ReadToEnd (System.IO.StreamReader. in))
+            in       (doto stream (.set_Position 0))
+            r        (t/reader in fmt {:handlers read-handlers})
+            actual   (t/read r)]
+        (is (Debuggable/Equals value actual)
+            (str "Testing " fmt " for "
+                 "(= " (pr-str value) " " (pr-str actual) ") "
+                 s))))))

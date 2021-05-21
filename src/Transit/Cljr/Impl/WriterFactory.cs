@@ -81,8 +81,11 @@ namespace Sellars.Transit.Cljr.Impl
             return builder.ToImmutable();
         }
 
-        private static IImmutableDictionary<Type, IWriteHandler> Handlers(IDictionary<Type, IWriteHandler> customHandlers) 
+        public static IImmutableDictionary<Type, IWriteHandler> Handlers(IDictionary<Type, IWriteHandler> customHandlers) 
         {
+            if (customHandlers is Alpha.WriteHandlerMap whm)
+                return whm;
+
             IImmutableDictionary<Type, IWriteHandler> handlers = DefaultHandlers();
 
             if (customHandlers != null)

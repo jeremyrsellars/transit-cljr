@@ -88,8 +88,11 @@ namespace Beerendonk.Transit.Impl
             }
         }
 
-        private static IImmutableDictionary<string, IReadHandler> Handlers(IImmutableDictionary<string, IReadHandler> customHandlers) 
+        public static IImmutableDictionary<string, IReadHandler> Handlers(IImmutableDictionary<string, IReadHandler> customHandlers) 
         {
+            if (customHandlers is Sellars.Transit.Cljr.Impl.Alpha.ReadHandlerMap rhm)
+                return rhm;
+
             DisallowOverridingGroundTypes(customHandlers);
             IImmutableDictionary<string, IReadHandler> handlers = DefaultHandlers();
             if (customHandlers != null) 

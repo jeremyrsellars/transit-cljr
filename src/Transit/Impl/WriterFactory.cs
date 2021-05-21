@@ -25,6 +25,7 @@ using System.Collections.Immutable;
 using System.IO;
 using clojure.lang;
 using Sellars.Transit.Alpha;
+using Sellars.Transit.Cljr.Impl.Alpha;
 
 namespace Beerendonk.Transit.Impl
 {
@@ -80,8 +81,11 @@ namespace Beerendonk.Transit.Impl
             return builder.ToImmutable();
         }
 
-        private static IImmutableDictionary<Type, IWriteHandler> Handlers(IDictionary<Type, IWriteHandler> customHandlers) 
+        public static IImmutableDictionary<Type, IWriteHandler> Handlers(IDictionary<Type, IWriteHandler> customHandlers) 
         {
+            if (customHandlers is WriteHandlerMap whm)
+                return whm;
+
             IImmutableDictionary<Type, IWriteHandler> handlers = DefaultHandlers();
 
             if (customHandlers != null)
