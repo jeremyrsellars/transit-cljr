@@ -31,8 +31,8 @@
 	</ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="**\*.clj*" />
-    <None Remove="**\*.clj*" />
+    <EmbeddedResource Include="**\*.clj?" />
+    <None Remove="**\*.clj?" />
   </ItemGroup>
 
   <ItemGroup>
