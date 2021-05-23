@@ -165,6 +165,7 @@
       (FromRepresentation [_ tag representation]
         (fn-or-IDefaultReadHandler tag representation)))))
 
+
 (defn read-map-handler
   "Creates a Transit MapReadHandler whose FromRepresentation
    and DictionaryReader methods invoke the provided fns."
@@ -192,7 +193,7 @@
      (FromRepresentation [_ o]
        (with-meta (nth o 0) (nth o 1))))})
 
-(defn map-builder
+(defn transient-map-builder
   "Creates a MapBuilder that makes Clojure-
    compatible maps."
   []
@@ -201,6 +202,16 @@
     #_(Init [_ ^int size] (transient {}))
     (Add [_ m k v] (assoc! m k v))
     (Complete [_ m] (persistent! m))))
+
+(defn map-builder
+  "Creates a MapBuilder that makes Clojure-
+   compatible maps."
+  []
+  (reify IDictionaryReader
+    (Init [_] (transient []))
+    #_(Init [_ ^int size] (transient []))
+    (Add [_ l k v] (conj! (conj! l k) v))
+    (Complete [_ l] (apply hash-map (persistent! l)))))
 
 (defn list-builder
   "Creates an ArrayBuilder that makes Clojure-

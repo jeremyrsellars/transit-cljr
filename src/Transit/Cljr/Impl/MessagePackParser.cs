@@ -156,7 +156,8 @@ namespace Sellars.Transit.Impl
                     l = lr.Add(l, firstVal);
                     for(int i = 1; i < count; i++)
                     {
-                        l = lr.Add(l, ParseVal(ref rdr, options, false, cache));
+                        object item = ParseVal(ref rdr, options, false, cache);
+                        l = lr.Add(l, item);
                     }
                     return lr.Complete(l);
                 }

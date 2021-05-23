@@ -218,6 +218,32 @@
   (test-round-trip -2147483648.0)
   (test-round-trip -32768.0))
 
+#_
+(deftest test-map-with-int-and-same-char
+  (let [mseed {39 0}
+        ;m2    {39 0, \' 1}
+        m3    (assoc mseed \' 1)
+        ;m4    (into mseed m2)
+        m5    (persistent! (assoc! (transient mseed) \' 1))
+        m6    (persistent! (conj! (transient mseed) [\' 1]))]
+    (is (= #_ m2 m3 #_ m4 m5 m6))
+    (is (= 2 (count m3)))))
+
+#_
+(deftest test-char
+  (test-round-trip \')
+  (test-round-trip \")
+  (test-round-trip \a)
+  (test-round-trip \A)
+  (test-round-trip #{0, -4, 1, 39, -2, \', -1, -3, 3, 2})
+  (test-round-trip [0 0, -4 0, 1 0, 39 0, -2 0, \' 0, -1 0, -3 0, 3 0, 2 0])
+  #_ (test-round-trip {0 0, -4 0, 1 0, 39 0, -2 0, \' 0, -1 0, -3 0, 3 0, 2 0})) ; presently
+
+#_
+(deftest test-map
+ (test-round-trip {0 0, -4 0, 1 0, 39 0, -2 0, -1 0, -3 0, 3 0, 2 0})
+ (test-round-trip {0 0, -4 0, 1 0, 39 0, -2 0, \' 0, -1 0, -3 0, 3 0, 2 0})) ; can \` (char 39) coexist with 39?
+
 (deftest test-list-builder
   (let [value [\q -8 nil -5 #uuid "431a4354-32f5-b1ca-27d0-18937de600bc" -12 #uuid "b3b14607-2553-6bd0-1acc-4051b091f293" '+.*]
         ^Sellars.Transit.Alpha.IListReader lr (t/list-builder)

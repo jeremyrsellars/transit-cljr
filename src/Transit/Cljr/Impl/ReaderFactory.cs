@@ -189,7 +189,10 @@ namespace Sellars.Transit.Cljr.Impl
                     Initialize();
                 }
 
-                return (T)p.Parse(cache.Init());
+                var v = (T)p.Parse(cache.Init());
+                if (v == null)
+                    return default;
+                return v;
             }
 
             object IReader.Read() => Read<object>();

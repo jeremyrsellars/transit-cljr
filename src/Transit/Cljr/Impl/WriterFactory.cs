@@ -156,6 +156,8 @@ namespace Sellars.Transit.Cljr.Impl
 
             public void Write(T value)
             {
+                if (value == null)
+                    ToString();
                 emitter.Emit(value, false, wc.Init());
                 output.Flush();
             }
