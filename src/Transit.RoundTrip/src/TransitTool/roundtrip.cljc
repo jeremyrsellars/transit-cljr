@@ -1,3 +1,10 @@
+#?(:cljr 
+    (try
+      (assembly-load "clojure.test.check")
+      (assembly-load "clojure.tools.reader")
+      (catch Exception e
+          (throw (Exception. (str "Pre-load " (.ToString e)) e)))))
+
 (ns TransitTool.roundtrip
   (:require #?@(:cljr [[clojure.clr.io :as io]
                        Sellars.Transit
@@ -30,24 +37,47 @@
     {}
     enc-extension))
 
+#?(:clj (def path-combine io/file)
+   :cljr (defn path-combine
+            ([p & ps]
+             (io/as-file (reduce #(System.IO.Path/Combine %1 (str %2)) (str p) ps)))))
+
 (defn now-ms
   []
   (inst-ms #?(:clj (java.util.Date.)
               :cljr (DateTime/UtcNow))))  
 
+(defmulti describe-command
+  (fn describe-command-dispatch [command]
+    (keyword command))
+  :default :usage)
+
 (defmulti run-command
   (fn run-command-dispatch [[command]]
-    (keyword command)))
+    (keyword command))
+  :default :usage)
+
+(defmethod describe-command :usage describe-command_usage
+  [command]
+  "Usage information")
+(defmethod run-command :usage run-command_usage
+  [[command dir & encodings]]
+  (println "Usage: command args")
+  (println)
+  (println "Commands:")
+  (doseq [[command f] (methods run-command)]
+    (println "  " (name command) " - " (describe-command command)))
+  (println "<command> dir [json json-verbose msgpack]"))
 
 (defn parse-example-file
   [f]
   (when-let [[_ dir ex-id encoding extension] (re-find #"(.*[/\\])(\d+)\.(\w+)(\.\w+)" (str f))]
     (when (contains? enc-extension (keyword encoding)) 
-      [dir (Long. ex-id) (keyword encoding)])))
+      [dir (#?(:cljr Convert/ToInt64 :clj Long.) ex-id) (keyword encoding)])))
 
 (defn example-file
   [dir ex-id encoding]
-  (io/file (io/as-file dir) (str ex-id "." (name encoding) (enc-extension encoding))))
+  (path-combine (io/as-file dir) (str ex-id "." (name encoding) (enc-extension encoding))))
 
 #_
 (let [ex-file-args ["../" 1 :msgpack]
@@ -64,12 +94,12 @@
 #?(:clj
    (defn output-stream [f](FileOutputStream. f))
    :cljr
-   (defn output-stream [f](FileStream/OpenWrite (str f))))
+   (defn output-stream [f](io/output-stream f)))
 
 #?(:clj
    (defn input-stream [f](FileInputStream. f))
    :cljr
-   (defn input-stream [f](FileStream/OpenRead (str f))))
+   (defn input-stream [f](io/input-stream f)))
 
 
 (defn write-example
@@ -98,9 +128,12 @@
 
 #_ (roundtrip-example "./examples" 1 :json "example uno")
 
+(defmethod describe-command :gen-dir describe-command_gen-dir
+  [command]
+  "Generate directory of sample data")
 (defmethod run-command :gen-dir run-command_gen-dir
   [[command dir & encodings]]
-  (when (io/file dir)
+  (when (io/as-file dir)
     (let [encodings (or (seq (map keyword encodings)) (seq all-encodings))
           serial-num (atom (now-ms))]
       (tc/quick-check 10
@@ -112,10 +145,13 @@
 
 #_ (run-command ["gen-dir" "examples"])
 
+(defmethod describe-command :test-dir describe-command_test-dir
+  [command]
+  "Test directory of sample data created with gen-dir")
 (defmethod run-command :test-dir run-command_test-dir
   [[command dir & encodings]]
   (let [encodings (or (seq (map keyword encodings)) (seq all-encodings))
-        examples (->> (file-seq (io/file dir))
+        examples (->> (file-seq (io/as-file dir))
                    (keep parse-example-file)
                    (filter (fn [[dir ex-id encoding]](= :edn encoding))))
         stats (atom {:= 0, :not= 0 :problems []})]

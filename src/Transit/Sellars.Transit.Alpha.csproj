@@ -21,8 +21,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="**\*.clj?" />
-    <None Remove="**\*.clj?" />
+    <EmbeddedResource Include="**\*.clj" />
+    <None Remove="**\*.clj" />
+    <EmbeddedResource Include="**\*.cljc" />
+    <None Remove="**\*.cljc" />
   </ItemGroup>
 
   <ItemGroup>
