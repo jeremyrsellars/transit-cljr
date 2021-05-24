@@ -1,5 +1,6 @@
 ﻿namespace Sellars.Transit.Alpha
 {
+    [System.Runtime.InteropServices.Guid("774D26AA-EDCC-4DBC-A074-FFEA80D2EC6D")]
     public interface IKnownTag
     {
         /// <summary>

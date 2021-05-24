@@ -37,6 +37,7 @@ namespace Sellars.Transit.Alpha
     /// Processes a non-decodable transit value.
     /// </summary>
     /// <typeparam name="T"></typeparam>
+    [System.Runtime.InteropServices.Guid("02361BE4-D886-4129-89F2-46167CA32363")]
     public interface IDefaultReadHandler
     {
         /// <summary>

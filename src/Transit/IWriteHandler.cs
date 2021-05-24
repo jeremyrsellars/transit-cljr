@@ -21,6 +21,7 @@ namespace Sellars.Transit.Alpha
     /// <summary>
     /// Converts an instance of an type to a transit representation.
     /// </summary>
+    [System.Runtime.InteropServices.Guid("EA80A86E-55A6-477D-B949-B3EDFA6C5801")]
     public interface IWriteHandler
     {
         /// <summary>

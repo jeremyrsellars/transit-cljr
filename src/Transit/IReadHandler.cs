@@ -24,6 +24,7 @@ namespace Sellars.Transit.Alpha
     /// <see cref="IDictionaryReadHandler"/> to support 
     /// incremental parsing of representation, that interface will be used instead.
     /// </summary>
+    [System.Runtime.InteropServices.Guid("A29ABA44-7027-40E4-8257-8E4B1FD51EF7")]
     public interface IReadHandler
     {
         /// <summary>

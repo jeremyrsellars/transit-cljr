@@ -21,6 +21,7 @@ namespace Sellars.Transit.Alpha
     /// <summary>
     /// Interface for reading values in transit format.
     /// </summary>
+    [System.Runtime.InteropServices.Guid("9DBDDBF6-B0A3-440C-8E3A-3B7A6D11A6A2")]
     public interface IReader
     {
         /// <summary>

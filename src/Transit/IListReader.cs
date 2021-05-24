@@ -21,6 +21,7 @@ namespace Sellars.Transit.Alpha
     /// <summary>
     /// Identifies a list reader.
     /// </summary>
+    [System.Runtime.InteropServices.Guid("DD51897C-F71A-46E4-87FB-11CF62290960")]
     public interface IListReader
     {
         /// <summary>

@@ -29,6 +29,7 @@ namespace Sellars.Transit.Spi.Alpha
     ///  while ensuring that parsing and decoding work correctly. This interface should never 
     ///  be used by applications that using this library.
     /// </summary>
+    [System.Runtime.InteropServices.Guid("E8F8398A-17BC-4585-8851-3FD6964AC578")]
     public interface IReaderSpi
     {
         /// <summary>

@@ -21,6 +21,7 @@ namespace Sellars.Transit.Alpha
     /// <summary>
     /// Identifies a dictionary reader.
     /// </summary>
+    [System.Runtime.InteropServices.Guid("3FAE91EF-04CE-4675-A28F-9AC1B4F7107A")]
     public interface IDictionaryReader 
     {
         /// <summary>

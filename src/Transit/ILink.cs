@@ -24,6 +24,7 @@ namespace Sellars.Transit.Alpha
     /// <summary>
     /// Represents a hypermedia link, as per http://amundsen.com/media-types/collection/format/#arrays-links
     /// </summary>
+    [System.Runtime.InteropServices.Guid("946D0BCA-FE75-4BD8-904E-72FCF2D16992")]
     public interface ILink
     {
         /// <summary>

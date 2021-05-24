@@ -26,6 +26,7 @@ namespace Sellars.Transit.Alpha
     /// ground type using a representation for which there is no registered handler (e.g., an 
     /// enumerable for the representation of an array).
     /// </summary>
+    [System.Runtime.InteropServices.Guid("D6B8C830-57DF-495B-BE6B-8EC87EC652C1")]
     public interface ITaggedValue
     {
         /// <summary>

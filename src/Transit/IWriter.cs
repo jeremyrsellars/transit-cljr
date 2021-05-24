@@ -31,6 +31,7 @@ namespace Sellars.Transit.Alpha
         void Write(T value);
     }
 
+    [System.Runtime.InteropServices.Guid("6EE1B1D0-CD00-4C43-9069-514025D42788")]
     public interface IWriter
     {
         /// <summary>
