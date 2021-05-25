@@ -242,7 +242,10 @@ namespace Sellars.Transit.Cljr.Impl
             protected override IParser CreateParser()
             {
                 var streamReader = new StreamReader(input);
-                var jsonTextReader = new JsonTextReader(streamReader);
+                var jsonTextReader = new JsonTextReader(streamReader)
+                {
+                    SupportMultipleContent = true,
+                };
                 return new JsonParser(jsonTextReader, handlers, defaultHandler, 
                     dictionaryBuilder, listBuilder);
             }

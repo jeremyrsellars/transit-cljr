@@ -37,7 +37,9 @@
     {}
     enc-extension))
 
-#?(:clj (def path-combine io/file)
+#?(:clj (defn path-combine
+          ([p & ps]
+           (apply io/file (io/as-file p) (map io/as-file ps))))
    :cljr (defn path-combine
             ([p & ps]
              (io/as-file (reduce #(System.IO.Path/Combine %1 (str %2)) (str p) ps)))))
@@ -45,7 +47,7 @@
 (defn now-ms
   []
   (inst-ms #?(:clj (java.util.Date.)
-              :cljr (DateTime/UtcNow))))  
+              :cljr (DateTime/UtcNow))))
 
 (defmulti describe-command
   (fn describe-command-dispatch [command]
@@ -77,7 +79,7 @@
 
 (defn example-file
   [dir ex-id encoding]
-  (path-combine (io/as-file dir) (str ex-id "." (name encoding) (enc-extension encoding))))
+  (path-combine dir (str ex-id "." (name encoding) (enc-extension encoding))))
 
 #_
 (let [ex-file-args ["../" 1 :msgpack]
@@ -102,13 +104,19 @@
    (defn input-stream [f](io/input-stream f)))
 
 
+(defn write-examples
+  [f encoding & values]
+  (with-open [out (output-stream f)]
+    (let [writer (transit/writer out encoding)]
+      (doseq [value values]
+        (transit/write writer value))))
+  f)
+
+#_ (write-examples (example-file "./examples" 1 :json) :json "example uno"  "example dos")
+
 (defn write-example
   [dir ex-id encoding value]
-  (let [f (example-file dir ex-id encoding)]
-    (with-open [out (output-stream f)]
-      (let [writer (transit/writer out encoding)]
-        (transit/write writer value)))
-    f))
+  (write-examples (example-file dir ex-id encoding) encoding value))
 
 #_ (write-example "./examples" 1 :json "example uno")
 
@@ -120,6 +128,21 @@
       (transit/read reader)))))
 
 #_ (read-example "./examples" 1 :json)
+
+(defn read-examples
+  [f encoding]
+  (with-open [in (input-stream f)]
+    (let [reader (transit/reader in encoding)]
+      (loop [examples []]
+        (if-let [ex (try
+                      (transit/read reader)
+                      (catch Exception e
+                        #?(:clj (when-not (instance? java.io.EOFException (.getCause e))
+                                  (throw e))
+                           :default (println e))))]
+          (recur (conj examples ex))
+          examples)))))
+#_ (read-examples (example-file "./examples" 1 :json) :json)
 
 (defn roundtrip-example
   [dir ex-id encoding value]
@@ -139,7 +162,7 @@
       (tc/quick-check 10
         (prop/for-all [value gen/any-printable]
           (let [ex-id (swap! serial-num inc)]
-            (spit (example-file dir ex-id :edn) (pr-str value))  
+            (spit (example-file dir ex-id :edn) (pr-str value))
             (apply = value (map #(roundtrip-example dir ex-id % value) encodings))))
         :max-size 50))))
 
@@ -151,28 +174,73 @@
 (defmethod run-command :test-dir run-command_test-dir
   [[command dir & encodings]]
   (let [encodings (or (seq (map keyword encodings)) (seq all-encodings))
-        examples (->> (file-seq (io/as-file dir))
+        dir  #?(:cljr (System.IO.DirectoryInfo. dir)
+                :clj  (io/as-file dir)
+                :default dir)
+        examples (->> (file-seq dir)
                    (keep parse-example-file)
                    (filter (fn [[dir ex-id encoding]](= :edn encoding))))
-        stats (atom {:= 0, :not= 0 :problems []})]
+        stats (atom {:= 0, :not= 0 :problems {}})]
     (doseq [[dir ex-id enc :as ex-edn] examples
             encoding encodings]
       (let [ex-args [dir ex-id encoding]
             ex-file (apply example-file ex-args)
             ; _ (println ex-id enc ex-file)
-            edn (slurp (apply example-file ex-edn))
+            edn (slurp (apply example-file ex-edn)
+                 #?@(:cljr [:encoding System.Text.Encoding/UTF8]))
             expected (edn/read-string edn)
             actual (apply read-example ex-args)
             equal? (= expected actual)]
         (swap! stats update (if equal? := :not=) inc)
         (when-not equal?
-          (swap! stats update :problems conj (str ex-file)))))
+          (swap! stats update-in [:problems encoding] conj (str ex-file)))))
     (if (pos? (:not= @stats))
       (binding [*out* *err*]
-        (println "Mismatches occurred")))    
+        (println "Mismatches occurred")))
     @stats))
 
 #_ (run-command ["test-dir" "examples"])
+
+(defmethod describe-command :test-multi describe-command_test-multi
+  [command]
+  "Test multiple read/write from a file generated from a directory of sample data.")
+(defmethod run-command :test-multi run-command_test-multi
+  [[command dir & encodings]]
+  (let [encodings (or (seq (map keyword encodings)) (seq all-encodings))
+        dir  #?(:cljr (System.IO.DirectoryInfo. dir)
+                :clj  (io/as-file dir)
+                :default dir)
+        examples (->> (file-seq dir)
+                   (keep parse-example-file)
+                   (filter (fn [[dir ex-id encoding]](= :edn encoding))))
+        stats (atom {:= 0, :not= 0 :problems {}})]
+    (doseq [encoding encodings]
+      (let [example-values (for [[dir ex-id enc :as ex-edn] examples]
+                             (edn/read-string (slurp (apply example-file ex-edn)
+                                                #?@(:cljr [:encoding System.Text.Encoding/UTF8]))))
+            temp-f (doto (apply write-examples (example-file dir "many" encoding) encoding example-values)
+                     #?(:clj (.deleteOnExit)))
+            actual-values (read-examples temp-f encoding)]
+        ;(println :example-values example-values)
+        ;(println :actual-values actual-values)
+        (doall
+          (map
+            (fn upd-stats [expected actual ex-args]
+              (let [equal? (= expected actual)]
+                (swap! stats update (if equal? := :not=) inc)
+                (when-not equal?
+                  (swap! stats update-in [:problems encoding] conj (str (apply example-file ex-args))))))
+            example-values
+            (concat actual-values (repeat nil))
+            examples))
+        #?(:clj (io/delete-file temp-f)
+           :cljr (.Delete temp-f))))
+    (if (pos? (:not= @stats))
+      (binding [*out* *err*]
+        (println "Mismatches occurred")))
+    @stats))
+
+#_ (run-command ["test-multi" "examples"])
 
 (defn -main [& args]
   (clojure.pprint/pprint (run-command args)))
