@@ -101,7 +101,7 @@
      (StringRepresentation [_ _] nil)
      (GetVerboseHandler [_] nil))})
 
-(deftype Writer [w])
+(deftype Writer [^IWriter w])
 
 (defn writer
   "Creates a writer over the provided destination `out` using
@@ -140,7 +140,7 @@
 
 (defn write
   "Writes a value to a transit writer."
-  [^IWriter writer o]
+  [^Writer writer o]
   (.Write (.w writer) o)) ; is there a way to type-hint a generic interface?
 
 
@@ -265,7 +265,7 @@
   "Creates a IWriteHandler for a record type"
   [^Type type]
   (reify IWriteHandler
-    (Tag [_ _] (.GetFullName type))
+    (Tag [_ _] (.get_FullName type))
     (Representation [_ rec] (tagged-value "map" rec))
     (StringRepresentation [_ _] nil)
     (GetVerboseHandler [_] nil)))
@@ -280,7 +280,7 @@
 (defn record-read-handler
   "Creates a ReadHandler for a record type"
   [^Type type]
-  (let [type-name (map #(str/replace % "_" "-") (str/split (.GetFullName type) #"\."))
+  (let [type-name (map #(str/replace % "_" "-") (str/split (.get_FullName type) #"\."))
         map-ctor (-> (str (str/join "." (butlast type-name)) "/map->" (last type-name))
                      symbol
                      resolve)]
@@ -290,7 +290,7 @@
 (defn record-read-handlers
   "Creates a map of record type tags to ReadHandlers"
   [& types]
-  (reduce (fn [d ^Type t] (assoc d (.GetFullName t) (record-read-handler t)))
+  (reduce (fn [d ^Type t] (assoc d (.get_FullName t) (record-read-handler t)))
           {}
           types))
 
