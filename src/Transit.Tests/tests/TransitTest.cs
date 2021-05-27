@@ -424,7 +424,7 @@ namespace Beerendonk.Transit.Tests
         {
             using (Stream output = new MemoryStream())
             {
-                IWriter<object> w = adapter.CreateCustomWriter(format, output, customHandlers, null, null);
+                IWriter<object> w = adapter.CreateCustomWriter(format, output, customHandlers, defaultHandler, transform);
                 w.Write(obj);
 
                 output.Position = 0;
