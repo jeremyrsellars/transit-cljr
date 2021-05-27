@@ -31,17 +31,21 @@ namespace Sellars.Transit.Tests
         public Type[] ListTypeGuarantees { get; set; }
         public Type[] DictionaryTypeGuarantees { get; set; }
         public Type[] SetTypeGuarantees { get; set; }
+        public Func<object, string> SerializeJson { get; set; }
+
         public override string ToString() => Name;
 
         public static System.Collections.Generic.IEnumerable<FactoryImplementationAdapter> Adapters =>
             new[]
             {
+                // TransitFactory (Newtonsoft)
                 new FactoryImplementationAdapter
                 {
                     Name = typeof(Sellars.Transit.Alpha.TransitFactory).FullName,
                     CreateReader = Sellars.Transit.Alpha.TransitFactory.Reader,
                     CreateWriter = Sellars.Transit.Alpha.TransitFactory.Writer<object>,
                     CreateCustomWriter = Sellars.Transit.Alpha.TransitFactory.Writer<object>,
+                    SerializeJson = SerializeNewtonsoft,
                     SetTypeGuarantees = new []{
                         typeof(System.Collections.IEnumerable),
                         typeof(System.Collections.Generic.IEnumerable<object>),
@@ -62,6 +66,50 @@ namespace Sellars.Transit.Tests
                     CreateReader = Sellars.Transit.Cljr.Alpha.TransitFactory.Reader,
                     CreateWriter = Sellars.Transit.Cljr.Alpha.TransitFactory.TypedWriter<object>,
                     CreateCustomWriter = Sellars.Transit.Cljr.Alpha.TransitFactory.TypedWriter<object>,
+                    SerializeJson = SerializeNewtonsoft,
+                    SetTypeGuarantees = new []{
+                        typeof(System.Collections.IEnumerable),
+                        typeof(clojure.lang.IPersistentSet),
+                    },
+                    DictionaryTypeGuarantees = new []{
+                        typeof(System.Collections.IDictionary),
+                        typeof(clojure.lang.IPersistentMap),
+                    },
+                    ListTypeGuarantees = new []{
+                        typeof(System.Collections.IList),
+                        typeof(clojure.lang.IPersistentVector),
+                    },
+                },
+
+                // FastTransitFactory (System.Text.Json)
+                new FactoryImplementationAdapter
+                {
+                    Name = typeof(Sellars.Transit.Alpha.FastTransitFactory).FullName,
+                    CreateReader = Sellars.Transit.Alpha.FastTransitFactory.Reader,
+                    CreateWriter = Sellars.Transit.Alpha.FastTransitFactory.Writer<object>,
+                    CreateCustomWriter = Sellars.Transit.Alpha.FastTransitFactory.Writer<object>,
+                    SerializeJson = SerializeSystemTextJson,
+                    SetTypeGuarantees = new []{
+                        typeof(System.Collections.IEnumerable),
+                        typeof(System.Collections.Generic.IEnumerable<object>),
+                        typeof(System.Collections.Generic.ISet<object>),
+                    },
+                    DictionaryTypeGuarantees = new []{
+                        typeof(System.Collections.IDictionary),
+                        typeof(System.Collections.Immutable.IImmutableDictionary<object, object>),
+                    },
+                    ListTypeGuarantees = new []{
+                        typeof(System.Collections.IList),
+                        typeof(System.Collections.Generic.IList<object>),
+                    },
+                },
+                new FactoryImplementationAdapter
+                {
+                    Name = typeof(Sellars.Transit.Cljr.Alpha.FastTransitFactory).FullName,
+                    CreateReader = Sellars.Transit.Cljr.Alpha.FastTransitFactory.Reader,
+                    CreateWriter = Sellars.Transit.Cljr.Alpha.FastTransitFactory.TypedWriter<object>,
+                    CreateCustomWriter = Sellars.Transit.Cljr.Alpha.FastTransitFactory.TypedWriter<object>,
+                    SerializeJson = SerializeSystemTextJson,
                     SetTypeGuarantees = new []{
                         typeof(System.Collections.IEnumerable),
                         typeof(clojure.lang.IPersistentSet),
@@ -76,5 +124,15 @@ namespace Sellars.Transit.Tests
                     },
                 },
             };
+
+        private static string SerializeNewtonsoft(object value)
+        {
+            var writer = new StringWriter();
+            new Newtonsoft.Json.JsonSerializer().Serialize(writer, value);
+            return writer.GetStringBuilder().ToString();
+        }
+
+        private static string SerializeSystemTextJson(object value) =>
+            System.Text.Json.JsonSerializer.Serialize(value);
     }
 }

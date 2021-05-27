@@ -670,13 +670,17 @@ namespace Beerendonk.Transit.Tests
             Assert.AreEqual("[1,2]", WriteJsonVerbose(longs));
 
             float[] floats = { 1.5f, 2.78f };
-            Assert.AreEqual("[1.5,2.78]", WriteJsonVerbose(floats));
+            Assert.AreEqual(// "[1.5,2.78]"
+                adapter.SerializeJson(floats),
+                WriteJsonVerbose(floats));
 
             bool[] bools = { true, false };
             Assert.AreEqual("[true,false]", WriteJsonVerbose(bools));
 
             double[] doubles = { 1.654d, 2.8765d };
-            Assert.AreEqual("[1.654,2.8765]", WriteJsonVerbose(doubles));
+            Assert.AreEqual(// "[1.654,2.8765]"
+                adapter.SerializeJson(doubles),
+                WriteJsonVerbose(doubles));
 
             short[] shorts = { 1, 2 };
             Assert.AreEqual("[1,2]", WriteJsonVerbose(shorts));
