@@ -316,7 +316,7 @@ namespace Sellars.Transit.Alpha
         /// <param name="numerator">The numerator.</param>
         /// <param name="denominator">The denominator.</param>
         /// <returns>An <see cref="IRatio"/> instance.</returns>
-        public Ratio Ratio(clojure.lang.BigInteger numerator, clojure.lang.BigInteger denominator) 
+        public static Ratio Ratio(clojure.lang.BigInteger numerator, clojure.lang.BigInteger denominator) 
         {
             return new Ratio(numerator, denominator);
         }
