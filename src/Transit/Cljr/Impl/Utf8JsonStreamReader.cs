@@ -78,7 +78,7 @@ namespace Sellars.Transit.Impl
                 // Check if we have a complete token and return it if we have it.
                 // We do this before reading anything since a previous read may have brought in several tokens.
                 cancellationToken.ThrowIfCancellationRequested();
-                if (this.TryReadNextToken(state, out ReadOnlySequence<byte> token))
+                if (this.TryReadNextToken(state, StreamState.InStream, out ReadOnlySequence<byte> token))
                 {
                     return token;
                 }
@@ -86,6 +86,9 @@ namespace Sellars.Transit.Impl
                 if (!await this.TryReadMoreDataAsync(cancellationToken).ConfigureAwait(false))
                 {
                     // We've reached the end of the stream.
+                    if (this.TryReadNextToken(state, StreamState.EndOfStream, out ReadOnlySequence<byte> finalNumberToken))
+                        return finalNumberToken;
+
                     // We already checked for a complete token with what we already had, so evidently it's not a complete token.
                     return null;
                 }
@@ -167,11 +170,11 @@ namespace Sellars.Transit.Impl
         /// </summary>
         /// <param name="completeToken">Receives the sequence of the first complete data structure found, if any.</param>
         /// <returns><c>true</c> if a complete data structure was found; <c>false</c> otherwise.</returns>
-        private bool TryReadNextToken(JsonReaderState state, out ReadOnlySequence<byte> completeToken)
+        private bool TryReadNextToken(JsonReaderState state, StreamState streamState, out ReadOnlySequence<byte> completeToken)
         {
             if (this.ReadData.Length > 0)
             {
-                var reader = new Utf8JsonReader(ReadData, false, state);
+                var reader = new Utf8JsonReader(ReadData, streamState == StreamState.EndOfStream, state);
 
                 // Perf opportunity: instead of skipping from the start each time, we could incrementally skip across tries
                 // possibly as easy as simply keeping a count of how many tokens still need to be skipped (that we know about).
@@ -188,16 +191,23 @@ namespace Sellars.Transit.Impl
 
             SequencePosition BufferLength(Utf8JsonReader reader)
             {
-                switch (reader.TokenType)
+                if (reader.TokenType == JsonTokenType.Number
+                    && streamState == StreamState.InStream)
                 {
-                    case JsonTokenType.Number:
-                        return new SequencePosition(
-                            reader.Position.GetObject(),
-                            reader.Position.GetInteger() + 1); // Need the next character to prove the number is completely readable.
-                    default:
-                        return reader.Position;
+                    return new SequencePosition(
+                        reader.Position.GetObject(),
+                        reader.Position.GetInteger() + 1); // Need the next character to prove the number is completely readable.
                 }
+                return reader.Position;
             }
+        }
+
+        private enum StreamState
+        {
+            /// <summary>Start of stream, middle of stream, or end of stream that hasn't been detected yet.</summary>
+            InStream,
+            /// <summary>The stream has reported that it has no more bytes.</summary>
+            EndOfStream,
         }
     }
 }

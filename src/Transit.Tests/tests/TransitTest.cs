@@ -369,7 +369,7 @@ namespace Beerendonk.Transit.Tests
             // Since numbers are the only tokens that seem to "make sense" in partial form
             // (If 1234567 is truncated like 123 it still seems a valid token,
             // so don't return it before we know for sure, like when followed by whitespace).
-            r = Reader("true false null \"foo\" 44.2 42 [1] 41 ");
+            r = Reader("true false null \"foo\" 44.2 42 [1] 41");
             var a = r.Read<object>();//<bool>();
             var b = r.Read<object>();//<bool>();
             var c = r.Read<object>();//<object>();
