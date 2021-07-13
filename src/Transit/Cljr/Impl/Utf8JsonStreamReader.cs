@@ -134,7 +134,7 @@ namespace Sellars.Transit.Impl
             }
         }
 
-#if !BUFFER
+#if NETFRAMEWORK
         private readonly byte[] bytes = new byte[1024];
 #endif
 
@@ -150,7 +150,7 @@ namespace Sellars.Transit.Impl
             int bytesRead = 0;
             try
             {
-#if BUFFER
+#if !NETFRAMEWORK
                 bytesRead = await this.stream.ReadAsync(buffer, cancellationToken).ConfigureAwait(false); // Doesn't work on net461
 #else
                 bytesRead = await this.stream.ReadAsync(bytes, 0, bytes.Length).ConfigureAwait(false);
