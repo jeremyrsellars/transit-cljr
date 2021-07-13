@@ -366,13 +366,26 @@ namespace Beerendonk.Transit.Tests
             AssertAreEqual<BigInteger>(expected, v);
             */
 
-            r = Reader("true null false \"foo\" 42.2 42");
-            Assert.IsTrue(r.Read<bool>());
-            Assert.IsNull(r.Read<object>());
-            Assert.IsFalse(r.Read<bool>());
-            Assert.AreEqual("foo", r.Read<string>());
-            Assert.AreEqual(42.2, r.Read<double>());
-            Assert.AreEqual(42L, r.Read<long>());
+            // Since numbers are the only tokens that seem to "make sense" in partial form
+            // (If 1234567 is truncated like 123 it still seems a valid token,
+            // so don't return it before we know for sure, like when followed by whitespace).
+            r = Reader("true false null \"foo\" 44.2 42 [1] 41 ");
+            var a = r.Read<object>();//<bool>();
+            var b = r.Read<object>();//<bool>();
+            var c = r.Read<object>();//<object>();
+            var d = r.Read<object>();//<string>();
+            var e = r.Read<object>();//<double>();
+            var f = r.Read<object>();//<long>();
+            var g = r.Read<object>();//<IList>();
+            var h = r.Read<object>();//<long>();
+            Assert.IsTrue((bool)a, a is object ? a.GetType().Name : null);
+            Assert.IsFalse((bool)b, b is object ? b.GetType().Name : null);
+            Assert.IsNull(c, c is object ? c.GetType().Name : null);
+            Assert.AreEqual("foo", d, d is object ? d.GetType().Name : null);
+            Assert.AreEqual(44.2, e, e is object ? e.GetType().Name : null);
+            Assert.AreEqual(42L, f, f is object ? f.GetType().Name : null);
+            Assert.That(() => g is IList l && l.Count == 1 && (long)l[0] == 1L, g is object ? g.GetType().Name : null);
+            Assert.AreEqual(41L, h, h is object ? f.GetType().Name : null);
         }
 
         [Test]

@@ -5,17 +5,20 @@ using System.Threading;
 using System;
 using System.Text.Json;
 using System.Buffers;
+using System.Diagnostics;
 
 namespace Sellars.Transit.Impl
 {
     /// <summary>
     /// Represents a JSON parser.
     /// </summary>
+    [DebuggerDisplay("{this}[CurrentToken={{BytesAsString}}]")]
     internal class Utf8JsonParser : AbstractParser
     {
         private readonly Utf8JsonStreamReader streamReader;
         private ReadOnlySequence<byte> bytes;
         private readonly JsonReaderOptions options;
+        private JsonReaderState? initialState;
 
         public CancellationToken CancellationToken { get; set; }
 
@@ -47,8 +50,14 @@ namespace Sellars.Transit.Impl
         /// <returns></returns>
         public override object Parse(ReadCache cache)
         {
-            JsonReaderState initialState = new Utf8JsonReader(ReadOnlySequence<byte>.Empty, this.options).CurrentState;
-            if (streamReader.ReadAsync(initialState, CancellationToken).Result is ReadOnlySequence<byte> bytes)
+            if (!(this.initialState is JsonReaderState state))
+            {
+                // The initial state is nearly == default(JsonReaderState).
+                // This is the only way to set the options, though.
+                initialState = state = new Utf8JsonReader(ReadOnlySequence<byte>.Empty, this.options).CurrentState;
+            }
+
+            if (streamReader.ReadAsync(state, CancellationToken).Result is ReadOnlySequence<byte> bytes)
             {
                 this.bytes = bytes;
                 var rdr = new Utf8JsonReader(bytes, this.options);
@@ -97,11 +106,9 @@ namespace Sellars.Transit.Impl
 
         internal void ReadToken(ref Utf8JsonReader rdr, bool allowTokenUnavailable = true, JsonTokenType? expectedCurrentTokenType = default)
         {
-            if(expectedCurrentTokenType.HasValue && rdr.TokenType != expectedCurrentTokenType.Value)
-            System.Diagnostics.Debug.WriteLineIf(
-                expectedCurrentTokenType.HasValue &&
-                rdr.TokenType != expectedCurrentTokenType.Value,
-                $"Expected {expectedCurrentTokenType}. Actual: {rdr.TokenType}.");
+            if (rdr.CurrentDepth == 0 && rdr.TokenType != JsonTokenType.StartArray && rdr.TokenType != JsonTokenType.StartObject)
+                return;
+
             if (streamReader.ReadAsync(rdr.CurrentState, CancellationToken).Result is ReadOnlySequence<byte> bytes)
             {
                 this.bytes = bytes;
@@ -110,7 +117,7 @@ namespace Sellars.Transit.Impl
                 var tokenAvailable = rdr.Read();
 
                 if (!tokenAvailable && !allowTokenUnavailable)
-                    throw new InvalidOperationException("!" + nameof(tokenAvailable));
+                    throw new InvalidOperationException("No tokens available.");
             }
             else
             {
