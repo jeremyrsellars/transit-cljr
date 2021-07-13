@@ -367,12 +367,12 @@ namespace Beerendonk.Transit.Tests
             */
 
             r = Reader("true null false \"foo\" 42.2 42");
-            Assert.IsTrue(Reader("true").Read<bool>());
-            Assert.IsNull(Reader("null").Read<object>());
-            Assert.IsFalse(Reader("false").Read<bool>());
-            Assert.AreEqual("foo", Reader("\"foo\"").Read<string>());
-            Assert.AreEqual(42.2, Reader("42.2").Read<double>());
-            Assert.AreEqual(42L, Reader("42").Read<long>());
+            Assert.IsTrue(r.Read<bool>());
+            Assert.IsNull(r.Read<object>());
+            Assert.IsFalse(r.Read<bool>());
+            Assert.AreEqual("foo", r.Read<string>());
+            Assert.AreEqual(42.2, r.Read<double>());
+            Assert.AreEqual(42L, r.Read<long>());
         }
 
         [Test]
