@@ -376,6 +376,15 @@ namespace Beerendonk.Transit.Tests
         }
 
         [Test]
+        public void TestReadHuge()
+        {
+            var s = new string('0', 1024 * 1024 + 3);
+            IReader r = Reader($"\"1{s}2\"");
+            string v = r.Read<string>();
+            AssertAreEqual<string>(1 + s + 2, v);
+        }
+
+        [Test]
         public void TestReadCache()
         {
             ReadCache rc = new ReadCache();
