@@ -133,7 +133,21 @@ namespace Sellars.Transit.Cljr.Impl
             IImmutableDictionary<string, IReadHandler> customHandlers,
             IDefaultReadHandler<object> customDefaultHandler)
         {
-            return new JsonReader(input, Handlers(customHandlers), customDefaultHandler);
+            return new JsonReader(input, Handlers(customHandlers), customDefaultHandler ?? DefaultDefaultHandler());
+        }
+
+        /// <summary>
+        /// Gets the JSON instance.
+        /// </summary>
+        /// <param name="input">The input.</param>
+        /// <param name="customHandlers">The custom handlers.</param>
+        /// <param name="customDefaultHandler">The custom default handler.</param>
+        /// <returns>A reader.</returns>
+        public static IReader GetFastJsonInstance(Stream input,
+            IImmutableDictionary<string, IReadHandler> customHandlers,
+            IDefaultReadHandler<object> customDefaultHandler)
+        {
+            return new Utf8JsonReader(input, Handlers(customHandlers), customDefaultHandler ?? DefaultDefaultHandler(), default);
         }
 
         /// <summary>

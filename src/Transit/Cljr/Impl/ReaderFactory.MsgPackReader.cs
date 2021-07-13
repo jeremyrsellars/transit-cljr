@@ -30,5 +30,8 @@ namespace Sellars.Transit.Cljr.Impl
                     dictionaryBuilder, listBuilder);
             }
         }
+
+        internal static IReader GetMsgPackInstance(Stream input, IImmutableDictionary<string, IReadHandler> customHandlers, object defaultHandler) =>
+            new MsgPackReader(input, customHandlers, default, default);
     }
 }

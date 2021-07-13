@@ -208,43 +208,38 @@ namespace Beerendonk.Transit.Impl
                         // if the same, build a map w/ rest of array contents
                         return ParseDictionary(false, cache, null, JsonToken.EndArray);
                     }
-                    else 
-                        if (firstVal is Tag) 
+                    else if (firstVal is Tag) 
+                    {
+                        object val;
+                        jp.Read(); // advance to value
+                        string tag = ((Tag)firstVal).GetValue();
+                        IReadHandler val_handler;
+                        if (TryGetHandler(tag, out val_handler)) 
                         {
-                            if (firstVal is Tag) 
+                            if (this.jp.TokenType == JsonToken.StartObject && val_handler is IDictionaryReadHandler) 
                             {
-                                object val;
-                                jp.Read(); // advance to value
-                                string tag = ((Tag)firstVal).GetValue();
-                                IReadHandler val_handler;
-                                if (TryGetHandler(tag, out val_handler)) 
-                                {
-                                    if (this.jp.TokenType == JsonToken.StartObject && val_handler is IDictionaryReadHandler) 
-                                    {
-                                        // use map reader to decode value
-                                        val = ParseDictionary(false, cache, (IDictionaryReadHandler)val_handler);
-                                    } 
-                                    else 
-                                        if (this.jp.TokenType == JsonToken.StartArray && val_handler is IListReadHandler) 
-                                        {
-                                            // use array reader to decode value
-                                            val = ParseList(false, cache, (IListReadHandler)val_handler);
-                                        } 
-                                        else 
-                                        {
-                                            // read value and decode normally
-                                            val = val_handler.FromRepresentation(ParseVal(false, cache));
-                                        }
-                                } 
-                                else 
-                                {
-                                    // default decode
-                                    val = this.Decode(tag, ParseVal(false, cache));
-                                }
-                                jp.Read(); // advance past end of object or array
-                                return val;
+                                // use map reader to decode value
+                                val = ParseDictionary(false, cache, (IDictionaryReadHandler)val_handler);
+                            } 
+                            else if (this.jp.TokenType == JsonToken.StartArray && val_handler is IListReadHandler) 
+                            {
+                                // use array reader to decode value
+                                val = ParseList(false, cache, (IListReadHandler)val_handler);
+                            } 
+                            else 
+                            {
+                                // read value and decode normally
+                                val = val_handler.FromRepresentation(ParseVal(false, cache));
                             }
+                        } 
+                        else 
+                        {
+                            // default decode
+                            val = this.Decode(tag, ParseVal(false, cache));
                         }
+                        jp.Read(); // advance past end of object or array
+                        return val;
+                    }
                 }
 
                 // Process list w/o special decoding or interpretation

@@ -45,6 +45,34 @@ namespace Sellars.Transit.Alpha
             }
         }
 
-        public static IReader Reader(Format type, Stream output) => TransitFactory.Reader(type, output);
+        public static IReader Reader(Format type, Stream input)
+        {
+            switch (type)
+            {
+                case Format.MsgPack:
+                    return ReaderFactory.GetMsgPackInstance(input, default, default);
+                case Format.Json:
+                case Format.JsonVerbose:
+                    return ReaderFactory.GetFastJsonInstance(input, default, default);
+                default:
+                    throw new ArgumentException("Unknown Writer type: " + type.ToString());
+            }
+        }
+
+        public static IReader Reader(Format type, Stream input,
+            System.Collections.Immutable.IImmutableDictionary<string, IReadHandler> customHandlers,
+            IDefaultReadHandler<object> customDefaultHandler)
+        {
+            switch (type)
+            {
+                case Format.MsgPack:
+                    return ReaderFactory.GetMsgPackInstance(input, customHandlers, customDefaultHandler);
+                case Format.Json:
+                case Format.JsonVerbose:
+                    return ReaderFactory.GetFastJsonInstance(input, customHandlers, customDefaultHandler);
+                default:
+                    throw new ArgumentException("Unknown Writer type: " + type.ToString());
+            }
+        }
     }
 }

@@ -126,6 +126,20 @@ namespace Beerendonk.Transit.Impl
         }
 
         /// <summary>
+        /// Gets the JSON instance.
+        /// </summary>
+        /// <param name="input">The input.</param>
+        /// <param name="customHandlers">The custom handlers.</param>
+        /// <param name="customDefaultHandler">The custom default handler.</param>
+        /// <returns>A reader.</returns>
+        public static IReader GetFastJsonInstance(Stream input,
+            IImmutableDictionary<string, IReadHandler> customHandlers,
+            IDefaultReadHandler<object> customDefaultHandler)
+        {
+            return new Utf8JsonReader(input, Handlers(customHandlers), DefaultHandler(customDefaultHandler), default);
+        }
+
+        /// <summary>
         /// Gets the MessagePack instance.
         /// </summary>
         /// <param name="input">The input.</param>
@@ -136,7 +150,7 @@ namespace Beerendonk.Transit.Impl
             IImmutableDictionary<string, IReadHandler> customHandlers,
             IDefaultReadHandler<object> customDefaultHandler)
         {
-            return new MsgPackReader(input, Handlers(customHandlers), customDefaultHandler,
+            return new MsgPackReader(input, Handlers(customHandlers), DefaultHandler(customDefaultHandler),
                 MessagePack.MessagePackSerializerOptions.Standard);
         }
 
