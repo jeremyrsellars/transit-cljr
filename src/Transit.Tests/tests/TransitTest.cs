@@ -398,7 +398,7 @@ namespace Beerendonk.Transit.Tests
         [Test]
         public void TestReadIdentity()
         {
-            IReader r = Reader("\"~\\'42\"");
+            IReader r = Reader("\"~'42\"");
             string v = r.Read<string>();
             AssertAreEqual<string>("42", v);
         }
