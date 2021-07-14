@@ -35,7 +35,7 @@ namespace Sellars.Transit.Impl
             : base(handlers, defaultHandler, dictionaryBuilder, listBuilder)
         {
             streamReader = reader;
-            this.options = options;
+            this.options = options ?? MessagePackSerializerOptions.Standard;
         }
 
         /// <summary>
