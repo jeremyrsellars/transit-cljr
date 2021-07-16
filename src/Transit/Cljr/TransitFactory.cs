@@ -61,7 +61,7 @@ namespace Sellars.Transit.Cljr.Alpha
                 defaultHandler,
                 transform));
 
-        private static IDictionary<Type, IWriteHandler> WriteHandlers(object customHandlers)
+        internal static IDictionary<Type, IWriteHandler> WriteHandlers(object customHandlers)
         {
             if (customHandlers is WriteHandlerMap whm)
                 return whm;

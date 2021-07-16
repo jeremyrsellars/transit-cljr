@@ -10,6 +10,9 @@ namespace Sellars.Transit.Cljr.Alpha
 {
     public class FastTransitFactory
     {
+        public static IWriter Writer(Format type, Stream output) =>
+            Writer(type, output, null);
+
         /// <summary>
         /// Creates a writer instance.
         /// </summary>
@@ -20,6 +23,16 @@ namespace Sellars.Transit.Cljr.Alpha
         {
             return TypedWriter<T>(type, output, null);
         }
+
+        public static IWriter Writer(Format type, Stream output, object customHandlers,
+            IWriteHandler defaultHandler = null, Func<object, object> transform = null) =>
+            new TypedWriterWrapper<object>(TypedWriter<object>(type, output,
+                WriteHandlers(customHandlers),
+                defaultHandler,
+                transform));
+
+        internal static IDictionary<Type, IWriteHandler> WriteHandlers(object customHandlers) =>
+            TransitFactory.WriteHandlers(customHandlers);
 
         /// <summary>
         /// Creates a writer instance.
@@ -50,31 +63,20 @@ namespace Sellars.Transit.Cljr.Alpha
             }
         }
 
-        public static IReader Reader(Format type, Stream input)
-        {
-            switch (type)
-            {
-                case Format.MsgPack:
-                    return ReaderFactory.GetMsgPackInstance(input, default, default);
-                case Format.Json:
-                case Format.JsonVerbose:
-                    return ReaderFactory.GetFastJsonInstance(input, default, default);
-                default:
-                    throw new ArgumentException("Unknown Writer type: " + type.ToString());
-            }
-        }
+        public static IReader Reader(Format type, Stream input) =>
+            Reader(type, input, default, default);
 
         public static IReader Reader(Format type, Stream input, 
-            System.Collections.Immutable.IImmutableDictionary<string, IReadHandler> customHandlers,
-            IDefaultReadHandler<object> customDefaultHandler)
+            object customHandlers,
+            IDefaultReadHandler customDefaultHandler)
         {
             switch (type)
             {
                 case Format.MsgPack:
-                    return ReaderFactory.GetMsgPackInstance(input, customHandlers, customDefaultHandler);
+                    return ReaderFactory.GetMsgPackInstance(input, TransitFactory.ReadHandlerMap(customHandlers), customDefaultHandler);
                 case Format.Json:
                 case Format.JsonVerbose:
-                    return ReaderFactory.GetFastJsonInstance(input, customHandlers, customDefaultHandler);
+                    return ReaderFactory.GetFastJsonInstance(input, TransitFactory.ReadHandlerMap(customHandlers), customDefaultHandler);
                 default:
                     throw new ArgumentException("Unknown Writer type: " + type.ToString());
             }

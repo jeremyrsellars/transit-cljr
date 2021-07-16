@@ -145,9 +145,9 @@ namespace Sellars.Transit.Cljr.Impl
         /// <returns>A reader.</returns>
         public static IReader GetFastJsonInstance(Stream input,
             IImmutableDictionary<string, IReadHandler> customHandlers,
-            IDefaultReadHandler<object> customDefaultHandler)
+            IDefaultReadHandler customDefaultHandler)
         {
-            return new Utf8JsonReader(input, Handlers(customHandlers), customDefaultHandler ?? DefaultDefaultHandler(), default);
+            return new Utf8JsonReader(input, Handlers(customHandlers), TypedDefaultHandler(customDefaultHandler) ?? DefaultDefaultHandler(), default);
         }
 
         /// <summary>
@@ -161,7 +161,7 @@ namespace Sellars.Transit.Cljr.Impl
             IImmutableDictionary<string, IReadHandler> customHandlers,
             IDefaultReadHandler customDefaultHandler)
         {
-            return new MsgPackReader(input, Handlers(customHandlers), TypedDefaultHandler(customDefaultHandler),
+            return new MsgPackReader(input, Handlers(customHandlers), TypedDefaultHandler(customDefaultHandler) ?? DefaultDefaultHandler(),
                 MessagePack.MessagePackSerializerOptions.Standard);
         }
 
