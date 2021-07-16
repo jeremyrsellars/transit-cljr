@@ -31,25 +31,6 @@
              "(= " (pr-str value) " " (pr-str actual) ") "
              s)))))
 
-(defn test-round-trip-normalized
- ([value normalization-fn]
-  (doseq [fmt formats]
-    (test-round-trip-normalized fmt value normalization-fn)))
- ([fmt value normalization-fn]
-  (let [stream (MemoryStream. 2000)
-        out      (doto stream (.set_Position 0))
-        w        (t/writer out fmt)
-        _        (t/write w value)
-        in       (doto stream (.set_Position 0))
-        s        (.ReadToEnd (System.IO.StreamReader. in))
-        in       (doto stream (.set_Position 0))
-        r        (t/reader in fmt)
-        actual   (t/read r)]
-    (is (Debuggable/NormalizedEquals value actual normalization-fn)
-        (str "Testing " fmt " for "
-             "(= " (pr-str value) " " (pr-str actual) ") "
-             s)))))
-
 (deftest test-basic-json
   (let [out (MemoryStream. 2000)
         w   (t/writer out :json)
@@ -231,13 +212,13 @@
 
 (deftest test-1.0
    ; in equality check, convert to double because JSON does not always preserve the `.0` on logical integers represented as floating point.
-  (test-round-trip-normalized 1.0 double))
+  (test-round-trip 1.0))
 
 (deftest test-double
    ; in equality check, convert to double because JSON does not always preserve the `.0` on logical integers represented as floating point.
-  (test-round-trip-normalized -1.58456325028529E+29 double)
-  (test-round-trip-normalized -2147483648.0 double)
-  (test-round-trip-normalized -32768.0 double))
+  (test-round-trip -1.58456325028529E+29)
+  (test-round-trip -2147483648.0)
+  (test-round-trip -32768.0))
 
 #_
 (deftest test-map-with-int-and-same-char
@@ -253,7 +234,7 @@
 #_
 (deftest test-char
   (test-round-trip \')
-  (test-round-trip \")
+  (test-round-trip (first "\""))
   (test-round-trip \a)
   (test-round-trip \A)
   (test-round-trip #{0, -4, 1, 39, -2, \', -1, -3, 3, 2})
@@ -292,16 +273,20 @@
           (str expected (pr-str expected))))))
 
 (deftest test-default-handlers
-  ; throw when writing an unknown type & no default handler
+  (Debuggable/WriteLine "throw when writing an unknown type & no default handler")
   (doseq [fmt formats]
-    (is (thrown? Exception
+    (Debuggable/WriteLine fmt)
+    (is (instance? Exception
+         (try 
           (let [stream (MemoryStream.)
                 writer (t/writer stream fmt)]
-            (t/write writer (Version. 1 2 3 4))))
+            (t/write writer (Version. 1 2 3 4)))
+          (catch Exception e e))) 
       "Expected exception when writing an unknown type & no default handler"))
 
-  ; add default write handler
+  (Debuggable/WriteLine "add default write handler")
   (doseq [fmt formats]
+    (Debuggable/WriteLine fmt)
     (let [stream (MemoryStream.)
           writer (t/writer stream fmt
                     {:default-handler
@@ -313,8 +298,9 @@
           reader (t/reader stream fmt)]
       (is (= (t/tagged-value "version" "1.2.3.4") (t/read reader)))))
 
-  ; add default write and read handlers
+  (Debuggable/WriteLine "add default write and read handlers")
   (doseq [fmt formats]
+    (Debuggable/WriteLine fmt)
     (let [stream (MemoryStream.)
           writer (t/writer stream fmt
                     {:default-handler

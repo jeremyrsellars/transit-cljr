@@ -58,9 +58,9 @@ namespace Sellars.Transit.Tests
 
         private void TestRoundTripOfFloats(TransitFactory.Format format, float[][] value)
         {
-            var json = Write(value, format);
-            Console.WriteLine(json);
-            var deser = Reader(json, format).Read<System.Collections.IList>();
+            var encoded = Write(value, format);
+            Console.WriteLine(encoded);
+            var deser = Reader(encoded, format).Read<System.Collections.IList>();
             Assert.That(deser.Count, Is.EqualTo(value.Length), "Top-level count");
             for (int a = 0; a < value.Length; a++)
             {
@@ -73,19 +73,22 @@ namespace Sellars.Transit.Tests
             }
         }
 
-        private IReader Reader(string s, TransitFactory.Format format)
+        private IReader Reader(object s, TransitFactory.Format format)
         {
-            Stream input = new MemoryStream(Encoding.Default.GetBytes(s));
+            Stream input = new MemoryStream(s as byte[] ?? Encoding.UTF8.GetBytes((string)s));
             return adapter.CreateReader(format, input);
         }
 
-        private string Write(object obj, TransitFactory.Format format, IDictionary<Type, IWriteHandler> customHandlers = null,
+        private object Write(object obj, TransitFactory.Format format, IDictionary<Type, IWriteHandler> customHandlers = null,
             IWriteHandler defaultHandler = null, Func<object, object> transform = null)
         {
-            using (Stream output = new MemoryStream())
+            using (var output = new MemoryStream())
             {
                 IWriter<object> w = adapter.CreateCustomWriter(format, output, customHandlers, defaultHandler, transform);
                 w.Write(obj);
+
+                if (format == TransitFactory.Format.MsgPack)
+                    return output.ToArray();
 
                 output.Position = 0;
                 var sr = new StreamReader(output);

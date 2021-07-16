@@ -225,7 +225,7 @@ namespace Sellars.Transit.Impl
 
             if (!supported)
             {
-                throw new NotSupportedException("Not supported: " + o.GetType());
+                throw new TransitException("Not supported: " + o.GetType());
             }
         }
 
