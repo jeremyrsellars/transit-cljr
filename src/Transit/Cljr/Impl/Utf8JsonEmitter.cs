@@ -88,7 +88,7 @@ namespace Sellars.Transit.Cljr.Impl
             if (asDictionaryKey)
                 EmitString(Constants.EscStr, "d", d.ToString(), asDictionaryKey, cache);
             else
-                jsonWriter.WriteNumberValue(d);
+                WriteRoundTripableFloatValue(d);
         }
 
         public override void EmitDouble(double d, bool asDictionaryKey, WriteCache cache)
@@ -96,7 +96,31 @@ namespace Sellars.Transit.Cljr.Impl
             if (asDictionaryKey)
                 EmitString(Constants.EscStr, "d", d.ToString(), asDictionaryKey, cache);
             else
-                jsonWriter.WriteNumberValue(d);
+                WriteRoundTripableDoubleValue(d);
+        }
+
+        private void WriteRoundTripableDoubleValue(double value)
+        {
+            // Seek to preserve floating point in serialization format.
+            // Note: By default, System.Text.Json will encode 1.0 as `1`
+            // (and all other conceptual integers that are lossless in the floating point type),
+            // so the receiving end will lose the fact that a floating point number was intended.
+            if (value % 1 == 0.0 && value.ToString("G17", System.Globalization.CultureInfo.InvariantCulture).IndexOf('.') < 0)
+                jsonWriter.WriteStringValue(value.ToString(@"\~\d0\.\0;\~\d-0\.\0;\~\d0\.\0", System.Globalization.CultureInfo.InvariantCulture));
+            else
+                jsonWriter.WriteNumberValue(value);
+        }
+
+        private void WriteRoundTripableFloatValue(float value)
+        {
+            // Seek to preserve floating point in serialization format.
+            // Note: By default, System.Text.Json will encode 1.0 as `1`
+            // (and all other conceptual integers that are lossless in the floating point type),
+            // so the receiving end will lose the fact that a floating point number was intended.
+            if (value % 1 == 0.0 && value.ToString("G9", System.Globalization.CultureInfo.InvariantCulture).IndexOf('.') < 0)
+                jsonWriter.WriteStringValue(value.ToString(@"\~\d0\.\0;\~\d-0\.\0;\~\d0\.\0", System.Globalization.CultureInfo.InvariantCulture));
+            else
+                jsonWriter.WriteNumberValue(value);
         }
 
         public override void EmitBinary(object b, bool asDictionaryKey, WriteCache cache)
