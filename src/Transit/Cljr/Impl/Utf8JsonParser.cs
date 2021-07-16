@@ -171,7 +171,9 @@ namespace Sellars.Transit.Impl
                     if (firstVal is string fvs && fvs == Constants.DirectoryAsList)
                     {
                         // if the same, build a map w/ rest of array contents
-                        return ParseArrayAsDictionary(ref rdr, options, false, cache, dictionaryBuilder);
+                        var d = ParseArrayAsDictionary(ref rdr, options, false, cache, dictionaryBuilder);
+                        ReadToken(ref rdr, expectedCurrentTokenType: JsonTokenType.EndArray); // advance past end of object or array
+                        return d;
                     }
                     else if (firstVal is Tag)
                     {
@@ -217,6 +219,8 @@ namespace Sellars.Transit.Impl
                 ReadToken(ref rdr, expectedCurrentTokenType: JsonTokenType.EndArray); // advance past end of object or array
                 return lr.Complete(l);
             }
+
+            ReadToken(ref rdr, expectedCurrentTokenType: JsonTokenType.EndArray); // advance past end of object or array
 
             // Make an empty collection, honoring handler's ListReader, if present
             IListReader lr2 = (handler != null) ? handler.ListReader() : listBuilder;

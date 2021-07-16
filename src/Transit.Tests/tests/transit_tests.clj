@@ -204,10 +204,12 @@
 
 (deftest test-vec
   (test-round-trip [])
+  (test-round-trip ['() (list #{:VtP/f- 8403688711220059N})])
   (test-round-trip [\q -8 nil -5 #uuid "431a4354-32f5-b1ca-27d0-18937de600bc" -12 #uuid "b3b14607-2553-6bd0-1acc-4051b091f293" '+.*]))
 
 (deftest test-list
   (test-round-trip (list))
+  (test-round-trip (list {} #{:*3 "vGA"}))
   (test-round-trip (list \q -8 nil -5 #uuid "431a4354-32f5-b1ca-27d0-18937de600bc" -12 #uuid "b3b14607-2553-6bd0-1acc-4051b091f293" '+.*)))
 
 (deftest test-1.0
@@ -241,10 +243,10 @@
   (test-round-trip [0 0, -4 0, 1 0, 39 0, -2 0, \' 0, -1 0, -3 0, 3 0, 2 0])
   #_ (test-round-trip {0 0, -4 0, 1 0, 39 0, -2 0, \' 0, -1 0, -3 0, 3 0, 2 0})) ; presently
 
-#_
 (deftest test-map
  (test-round-trip {0 0, -4 0, 1 0, 39 0, -2 0, -1 0, -3 0, 3 0, 2 0})
- (test-round-trip {0 0, -4 0, 1 0, 39 0, -2 0, \' 0, -1 0, -3 0, 3 0, 2 0})) ; can \` (char 39) coexist with 39?
+ #_(test-round-trip {0 0, -4 0, 1 0, 39 0, -2 0, \' 0, -1 0, -3 0, 3 0, 2 0}) ; can \` (char 39) coexist with 39?
+ (test-round-trip {{}{}, {{}{}} {{}{}}}))
 
 (deftest test-list-builder
   (let [value [\q -8 nil -5 #uuid "431a4354-32f5-b1ca-27d0-18937de600bc" -12 #uuid "b3b14607-2553-6bd0-1acc-4051b091f293" '+.*]
