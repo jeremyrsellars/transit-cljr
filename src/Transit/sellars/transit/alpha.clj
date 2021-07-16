@@ -20,7 +20,7 @@
   (:import [Sellars.Transit.Alpha IWriteHandler IReadHandler IListReadHandler IDictionaryReadHandler IDefaultReadHandler
             IReader IWriter
             IListReader TransitFactory+Format IDictionaryReader]
-           [Sellars.Transit.Cljr.Alpha TransitFactory]
+           [Sellars.Transit.Cljr.Alpha TransitFactory FastTransitFactory]
            [Sellars.Transit.Spi.Alpha IReaderSpi]
            [System.IO Stream]))
 
@@ -125,7 +125,7 @@
        (let [handler-map (if (instance? HandlerMapContainer handlers)
                            (handler-map handlers)
                            (merge default-write-handlers handlers))]
-         (Writer. (TransitFactory/Writer (transit-format type) out handler-map default-handler
+         (Writer. (FastTransitFactory/Writer (transit-format type) out handler-map default-handler
                     (when transform
                       (condp instance? transform
                         |System.Func`2[System.Object,System.Object]|
@@ -245,7 +245,7 @@
        (let [handler-map (if (instance? HandlerMapContainer handlers)
                            (handler-map handlers)
                            (merge default-read-handlers handlers))
-             reader (TransitFactory/Reader (transit-format type)
+             reader (FastTransitFactory/Reader (transit-format type)
                                            in
                                            handler-map
                                            (when default-handler
