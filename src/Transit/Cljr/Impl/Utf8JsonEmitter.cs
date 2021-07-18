@@ -28,6 +28,7 @@ namespace Sellars.Transit.Cljr.Impl
         public override void Emit(object obj, bool asDictionaryKey, WriteCache cache)
         {
             MarshalTop(obj, cache);
+            jsonWriter.Reset();
         }
 
         public override void EmitNull(bool asDictionaryKey, WriteCache cache)
