@@ -30,9 +30,9 @@ namespace Beerendonk.Transit.Impl
         void EmitDouble(float d, bool asDictionaryKey, WriteCache cache);
         void EmitDouble(double d, bool asDictionaryKey, WriteCache cache);
         void EmitBinary(object b, bool asDictionaryKey, WriteCache cache);
-        void EmitListStart(long size);
+        void EmitListStart(System.Lazy<long> size);
         void EmitListEnd();
-        void EmitDictionaryStart(long size);
+        void EmitDictionaryStart(System.Lazy<long> size);
         void EmitDictionaryEnd();
         bool PrefersStrings();
         void FlushWriter();

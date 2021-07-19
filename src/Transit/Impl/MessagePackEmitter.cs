@@ -114,10 +114,8 @@ namespace Sellars.Transit.Impl
 
         protected void EmitList(ref MessagePackWriter writer, object o, bool ignored, WriteCache cache)
         {
-            var enumerable = o as System.Collections.IEnumerable;
-            var length = enumerable.Cast<object>().Count();
-
-            EmitListStart(ref writer, length);
+            var enumerable = (System.Collections.IEnumerable)o;
+            EmitListStart(ref writer, LazyCount(enumerable).Value);
 
             if (o is IEnumerable<int>)
             {
@@ -354,9 +352,7 @@ namespace Sellars.Transit.Impl
         protected void EmitDictionary(ref MessagePackWriter writer, IEnumerable<KeyValuePair<object, object>> keyValuePairs, 
             bool ignored, WriteCache cache)
         {
-            long sz = Enumerable.Count(keyValuePairs);
-
-            EmitDictionaryStart(ref writer, sz);
+            EmitDictionaryStart(ref writer, LazyCount(keyValuePairs).Value);
 
             foreach (var kvp in keyValuePairs)
         	{
@@ -437,10 +433,10 @@ namespace Sellars.Transit.Impl
             FlushWriter(ref writer);
         }
 
-        public override void EmitListStart(long size)
+        public override void EmitListStart(Lazy<long> size)
         {
             var writer = new MessagePackWriter(bufferWriter);
-            EmitListStart(ref writer, size);
+            EmitListStart(ref writer, size.Value);
             FlushWriter(ref writer);
         }
 
@@ -448,10 +444,10 @@ namespace Sellars.Transit.Impl
         {
         }
 
-        public override void EmitDictionaryStart(long size)
+        public override void EmitDictionaryStart(Lazy<long> size)
         {
             var writer = new MessagePackWriter(bufferWriter);
-            EmitDictionaryStart(ref writer, size);
+            EmitDictionaryStart(ref writer, size.Value);
             FlushWriter(ref writer);
         }
 

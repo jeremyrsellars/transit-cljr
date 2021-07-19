@@ -39,9 +39,7 @@ namespace Sellars.Transit.Cljr.Impl
         protected override void EmitDictionary(IEnumerable<KeyValuePair<object, object>> keyValuePairs,
             bool ignored, WriteCache cache)
         {
-            long sz = keyValuePairs.Count();
-
-            EmitDictionaryStart(sz);
+            EmitDictionaryStart(LazyCount(keyValuePairs));
             foreach (KeyValuePair<object, object> item in keyValuePairs)
             {
                 Marshal(item.Key, true, cache);

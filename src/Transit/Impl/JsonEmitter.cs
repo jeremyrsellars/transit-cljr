@@ -121,7 +121,7 @@ namespace Beerendonk.Transit.Impl
             EmitString(Constants.EscStr, "b", Convert.ToBase64String((byte[])b), asDictionaryKey, cache);
         }
 
-        public override void EmitListStart(long size)
+        public override void EmitListStart(Lazy<long> size)
         {
             jsonWriter.WriteStartArray();
         }
@@ -131,7 +131,7 @@ namespace Beerendonk.Transit.Impl
             jsonWriter.WriteEndArray();
         }
 
-        public override void EmitDictionaryStart(long size)
+        public override void EmitDictionaryStart(Lazy<long> size)
         {
             jsonWriter.WriteStartObject();
         }
@@ -154,9 +154,7 @@ namespace Beerendonk.Transit.Impl
         protected override void EmitDictionary(IEnumerable<KeyValuePair<object, object>> keyValuePairs, 
             bool ignored, WriteCache cache)
         {
-            long sz = Enumerable.Count(keyValuePairs);
-
-            EmitListStart(sz);
+            EmitListStart(LazyCount(keyValuePairs));
             EmitString(null, null, Constants.DirectoryAsList, false, cache);
 
             foreach (var kvp in keyValuePairs)

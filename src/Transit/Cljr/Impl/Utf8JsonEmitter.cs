@@ -129,7 +129,7 @@ namespace Sellars.Transit.Cljr.Impl
             EmitString(Constants.EscStr, "b", Convert.ToBase64String((byte[])b), asDictionaryKey, cache);
         }
 
-        public override void EmitListStart(long size)
+        public override void EmitListStart(Lazy<long> size)
         {
             jsonWriter.WriteStartArray();
         }
@@ -139,7 +139,7 @@ namespace Sellars.Transit.Cljr.Impl
             jsonWriter.WriteEndArray();
         }
 
-        public override void EmitDictionaryStart(long size)
+        public override void EmitDictionaryStart(Lazy<long> size)
         {
             jsonWriter.WriteStartObject();
         }

@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
+using clojure.lang;
 using Sellars.Transit.Alpha;
 using Sellars.Transit.Util;
 
@@ -228,10 +229,9 @@ namespace Beerendonk.Transit.Impl
 
         protected void EmitList(object o, bool ignored, WriteCache cache)
         {
-            var enumerable = o as IEnumerable;
-            var length = enumerable.Cast<object>().Count();
+            var enumerable = (IEnumerable)o;
 
-            EmitListStart(length);
+            EmitListStart(LazyCount(enumerable));
 
             if (o is IEnumerable<int>)
             {
@@ -368,6 +368,30 @@ namespace Beerendonk.Transit.Impl
             Marshal(obj, false, cache);
         }
 
+        protected Lazy<long> LazyCount(IEnumerable enumerable) =>
+            new Lazy<long>(() =>
+            {
+                int count = 0;
+                foreach (var _ in enumerable) count++;
+                return count;
+            });
+
+        protected Lazy<long> LazyCount<T>(IEnumerable<T> items) =>
+            items is Counted c ? LazyLong(c.count())
+            : items is IList l ? LazyLong(l.Count)
+            : new Lazy<long>(() => Enumerable.Count(items));
+
+        protected Lazy<long> LazyLong(long value)
+        {
+            return new Lazy<long>(
+#if NETSTANDARD2_1 || NET
+            value
+#else
+            () => value
+#endif
+            );
+        }
+
         public abstract void Emit(object obj, bool asDictionaryKey, WriteCache cache);
 
         public abstract void EmitNull(bool asDictionaryKey, WriteCache cache);
@@ -388,11 +412,15 @@ namespace Beerendonk.Transit.Impl
 
         public abstract void EmitBinary(object b, bool asDictionaryKey, WriteCache cache);
 
-        public abstract void EmitListStart(long size);
+        public void EmitListStart(long size) => EmitListStart(LazyLong(size));
+
+        public abstract void EmitListStart(Lazy<long> size);
 
         public abstract void EmitListEnd();
 
-        public abstract void EmitDictionaryStart(long size);
+        public void EmitDictionaryStart(long size) => EmitDictionaryStart(LazyLong(size));
+
+        public abstract void EmitDictionaryStart(Lazy<long> size);
 
         public abstract void EmitDictionaryEnd();
 
