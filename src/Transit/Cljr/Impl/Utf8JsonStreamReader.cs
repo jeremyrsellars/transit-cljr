@@ -69,16 +69,36 @@ namespace Sellars.Transit.Impl
         /// When <c>null</c> is the result of the returned task,
         /// any extra bytes read (between the last complete token and the end of the stream) will be available via the <see cref="RemainingBytes"/> property.
         /// </remarks>
-        public async ValueTask<ReadOnlySequence<byte>?> ReadAsync(JsonReaderState state, CancellationToken cancellationToken)
+        public bool TryRead(JsonReaderState state, CancellationToken cancellationToken, out ReadOnlySequence<byte> bytes)
         {
             this.RecycleLastToken();
 
+            // Check if we have a complete token and return it if we have it.
+            // We do this before reading anything since a previous read may have brought in several tokens.
+            cancellationToken.ThrowIfCancellationRequested();
+            return this.TryReadNextToken(state, StreamState.InStream, out bytes);
+        }
+
+        /// <summary>
+        /// Reads the next Utf8Json token.
+        /// </summary>
+        /// <param name="cancellationToken">A cancellation token.</param>
+        /// <returns>
+        /// A task whose result is the next token from the stream, or <c>null</c> if the stream ends.
+        /// The returned sequence is valid until this <see cref="Utf8JsonStreamReader"/> is disposed or
+        /// until this method is called again, whichever comes first.
+        /// </returns>
+        /// <remarks>
+        /// When <c>null</c> is the result of the returned task,
+        /// any extra bytes read (between the last complete token and the end of the stream) will be available via the <see cref="RemainingBytes"/> property.
+        /// </remarks>
+        public async ValueTask<ReadOnlySequence<byte>?> ReadAsync(JsonReaderState state, CancellationToken cancellationToken)
+        {
             while (true)
             {
                 // Check if we have a complete token and return it if we have it.
                 // We do this before reading anything since a previous read may have brought in several tokens.
-                cancellationToken.ThrowIfCancellationRequested();
-                if (this.TryReadNextToken(state, StreamState.InStream, out ReadOnlySequence<byte> token))
+                if (this.TryRead(state, cancellationToken, out ReadOnlySequence<byte> token))
                 {
                     return token;
                 }

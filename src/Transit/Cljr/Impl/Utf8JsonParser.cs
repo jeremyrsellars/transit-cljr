@@ -109,7 +109,17 @@ namespace Sellars.Transit.Impl
             if (rdr.CurrentDepth == 0 && rdr.TokenType != JsonTokenType.StartArray && rdr.TokenType != JsonTokenType.StartObject)
                 return;
 
-            if (streamReader.ReadAsync(rdr.CurrentState, CancellationToken).Result is ReadOnlySequence<byte> bytes)
+            if (streamReader.TryRead(rdr.CurrentState, CancellationToken, out ReadOnlySequence<byte> token))
+            {
+                this.bytes = token;
+
+                rdr = new Utf8JsonReader(token, false, rdr.CurrentState);
+                var tokenAvailable = rdr.Read();
+
+                if (!tokenAvailable && !allowTokenUnavailable)
+                    throw new InvalidOperationException("No tokens available.");
+            }
+            else if (streamReader.ReadAsync(rdr.CurrentState, CancellationToken).Result is ReadOnlySequence<byte> bytes)
             {
                 this.bytes = bytes;
 
