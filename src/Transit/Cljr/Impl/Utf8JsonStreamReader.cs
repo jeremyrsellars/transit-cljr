@@ -56,27 +56,17 @@ namespace Sellars.Transit.Impl
         /// </summary>
         private Sequence<byte> ReadData => this.sequenceRental.Value;
 
-        /// <summary>
-        /// Reads the next Utf8Json token.
-        /// </summary>
-        /// <param name="cancellationToken">A cancellation token.</param>
-        /// <returns>
-        /// A task whose result is the next token from the stream, or <c>null</c> if the stream ends.
-        /// The returned sequence is valid until this <see cref="Utf8JsonStreamReader"/> is disposed or
-        /// until this method is called again, whichever comes first.
-        /// </returns>
-        /// <remarks>
-        /// When <c>null</c> is the result of the returned task,
-        /// any extra bytes read (between the last complete token and the end of the stream) will be available via the <see cref="RemainingBytes"/> property.
-        /// </remarks>
-        public bool TryRead(JsonReaderState state, CancellationToken cancellationToken, out ReadOnlySequence<byte> bytes)
-        {
-            this.RecycleLastToken();
 
-            // Check if we have a complete token and return it if we have it.
-            // We do this before reading anything since a previous read may have brought in several tokens.
-            cancellationToken.ThrowIfCancellationRequested();
-            return this.TryReadNextToken(state, StreamState.InStream, out bytes);
+        public void Init(JsonReaderOptions options, out Utf8JsonReader reader, out StreamState streamState)
+        {
+            reader = new Utf8JsonReader(ReadData, options);
+            streamState = StreamState.InStream;
+        }
+
+        public void Continue(JsonReaderState state, out Utf8JsonReader reader, out StreamState streamState)
+        {
+            reader = new Utf8JsonReader(ReadData, false, state);
+            streamState = StreamState.InStream;
         }
 
         /// <summary>
@@ -92,27 +82,20 @@ namespace Sellars.Transit.Impl
         /// When <c>null</c> is the result of the returned task,
         /// any extra bytes read (between the last complete token and the end of the stream) will be available via the <see cref="RemainingBytes"/> property.
         /// </remarks>
-        public async ValueTask<ReadOnlySequence<byte>?> ReadAsync(JsonReaderState state, CancellationToken cancellationToken)
+        public bool TryRead(ref Utf8JsonReader reader, StreamState streamState, CancellationToken cancellationToken)
         {
-            while (true)
-            {
-                // Check if we have a complete token and return it if we have it.
-                // We do this before reading anything since a previous read may have brought in several tokens.
-                if (this.TryRead(state, cancellationToken, out ReadOnlySequence<byte> token))
-                {
-                    return token;
-                }
+            this.RecycleLastToken();
 
-                if (!await this.TryReadMoreDataAsync(cancellationToken).ConfigureAwait(false))
-                {
-                    // We've reached the end of the stream.
-                    if (this.TryReadNextToken(state, StreamState.EndOfStream, out ReadOnlySequence<byte> finalNumberToken))
-                        return finalNumberToken;
+            // Check if we have a complete token and return it if we have it.
+            // We do this before reading anything since a previous read may have brought in several tokens.
+            cancellationToken.ThrowIfCancellationRequested();
 
-                    // We already checked for a complete token with what we already had, so evidently it's not a complete token.
-                    return null;
-                }
-            }
+            var rollback = reader;
+            if (TryReadNextToken(ref reader, streamState))
+                return true;
+
+            reader = rollback;
+            return false;
         }
 
         /// <summary>
@@ -163,7 +146,7 @@ namespace Sellars.Transit.Impl
         /// </summary>
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <returns><c>true</c> if more data was read; <c>false</c> if the end of the stream had already been reached.</returns>
-        private async Task<bool> TryReadMoreDataAsync(CancellationToken cancellationToken)
+        public async Task<bool> TryReadMoreDataAsync(CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
             Memory<byte> buffer = this.ReadData.GetMemory(sizeHint: 0);
@@ -190,39 +173,24 @@ namespace Sellars.Transit.Impl
         /// </summary>
         /// <param name="completeToken">Receives the sequence of the first complete data structure found, if any.</param>
         /// <returns><c>true</c> if a complete data structure was found; <c>false</c> otherwise.</returns>
-        private bool TryReadNextToken(JsonReaderState state, StreamState streamState, out ReadOnlySequence<byte> completeToken)
+        private bool TryReadNextToken(ref Utf8JsonReader reader, StreamState streamState)
         {
             if (this.ReadData.Length > 0)
             {
-                var reader = new Utf8JsonReader(ReadData, streamState == StreamState.EndOfStream, state);
+                var rdr = new Utf8JsonReader(ReadData, streamState == StreamState.EndOfStream, reader.CurrentState);
 
-                // Perf opportunity: instead of skipping from the start each time, we could incrementally skip across tries
-                // possibly as easy as simply keeping a count of how many tokens still need to be skipped (that we know about).
-                if (reader.Read())
+                if (rdr.Read())
                 {
-                    this.endOfLastToken = reader.Position;
-                    completeToken = ReadData.AsReadOnlySequence.Slice(0, BufferLength(reader));
+                    this.endOfLastToken = rdr.Position;
+                    reader = rdr;
                     return true;
                 }
             }
 
-            completeToken = default;
             return false;
-
-            SequencePosition BufferLength(Utf8JsonReader reader)
-            {
-                if (reader.TokenType == JsonTokenType.Number
-                    && streamState == StreamState.InStream)
-                {
-                    return new SequencePosition(
-                        reader.Position.GetObject(),
-                        reader.Position.GetInteger() + 1); // Need the next character to prove the number is completely readable.
-                }
-                return reader.Position;
-            }
         }
 
-        private enum StreamState
+        public enum StreamState
         {
             /// <summary>Start of stream, middle of stream, or end of stream that hasn't been detected yet.</summary>
             InStream,

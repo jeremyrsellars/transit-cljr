@@ -16,7 +16,6 @@ namespace Sellars.Transit.Impl
     internal class Utf8JsonParser : AbstractParser
     {
         private readonly Utf8JsonStreamReader streamReader;
-        private ReadOnlySequence<byte> bytes;
         private readonly JsonReaderOptions options;
         private JsonReaderState? initialState;
 
@@ -50,57 +49,76 @@ namespace Sellars.Transit.Impl
         /// <returns></returns>
         public override object Parse(ReadCache cache)
         {
-            if (!(this.initialState is JsonReaderState state))
-            {
-                // The initial state is nearly == default(JsonReaderState).
-                // This is the only way to set the options, though.
-                initialState = state = new Utf8JsonReader(ReadOnlySequence<byte>.Empty, this.options).CurrentState;
-            }
+            Utf8JsonReader rdr;
+            Utf8JsonStreamReader.StreamState streamState;
 
-            if (streamReader.ReadAsync(state, CancellationToken).Result is ReadOnlySequence<byte> bytes)
-            {
-                this.bytes = bytes;
-                var rdr = new Utf8JsonReader(bytes, this.options);
-                rdr.Read();
-                switch (rdr.TokenType)
-                {
-                    case JsonTokenType.None: return ParseUnknown(ref rdr, options, cache);
-                    case JsonTokenType.Number:
-                        return ParseIntegerOrFloatNumber(cache, bytes, ref rdr);
-                    case JsonTokenType.Null:
-                        ReadToken(ref rdr);
-                        return null;
-                    case JsonTokenType.True:
-                    case JsonTokenType.False:
-                        return ParseBoolean(ref rdr, cache);
-                    case JsonTokenType.String:
-                        return cache.CacheRead(ParseString(ref rdr, cache), false, this);
-                    case JsonTokenType.StartArray:
-                        return ParseArray(ref rdr, options, false, cache, null);
-                    case JsonTokenType.StartObject:
-                        return ParseMap(ref rdr, options, false, cache, null, JsonTokenType.EndObject);
-                    default:
-                        return ParseUnknown(ref rdr, options, cache);
-                }
-            }
-            return null;
-        }
-
-        private object ParseIntegerOrFloatNumber(ReadCache cache, ReadOnlySequence<byte> bytes, ref Utf8JsonReader rdr)
-        {
-            if (bytes.IsSingleSegment)
-            {
-                if (MemoryExtensions.LastIndexOf(bytes.First.Span, (byte)'.') >= 0)
-                    return ParseFloat(ref rdr, cache);
-            }
+            if (initialState is JsonReaderState state)
+                streamReader.Continue(state, out rdr, out streamState); // Continue parsing stream.
+            else if (!streamReader.TryReadMoreDataAsync(CancellationToken).Result)
+                return null; // No data available on first Parse (or cancelled).
             else
             {
-                foreach (var span in bytes)
+                // Start parsing stream.
+                streamReader.Init(this.options, out rdr, out streamState);
+                initialState = rdr.CurrentState;
+            }
+
+            while(true)
+            {
+                if (streamReader.TryRead(ref rdr, streamState, CancellationToken))
                 {
-                    if (MemoryExtensions.LastIndexOf(span.Span, (byte)'.') >= 0)
+                    switch (rdr.TokenType)
+                    {
+                        case JsonTokenType.None: return ParseUnknown(ref rdr, options, cache);
+                        case JsonTokenType.Number:
+                            return ParseIntegerOrFloatNumber(cache, ref rdr);
+                        case JsonTokenType.Null:
+                            ReadToken(ref rdr);
+                            return null;
+                        case JsonTokenType.True:
+                        case JsonTokenType.False:
+                            return ParseBoolean(ref rdr, cache);
+                        case JsonTokenType.String:
+                            return cache.CacheRead(ParseString(ref rdr, cache), false, this);
+                        case JsonTokenType.StartArray:
+                            return ParseArray(ref rdr, options, false, cache, null);
+                        case JsonTokenType.StartObject:
+                            return ParseMap(ref rdr, options, false, cache, null, JsonTokenType.EndObject);
+                        default:
+                            return ParseUnknown(ref rdr, options, cache);
+                    }
+                }
+                // No more full tokens are available
+                if (streamReader.TryReadMoreDataAsync(CancellationToken).Result)
+                    continue;  // More data was read, so TryRead again.
+                else if (streamState == Utf8JsonStreamReader.StreamState.InStream)
+                    // TryRead one last time (See if last token was incomplete JSON number)
+                    streamState = Utf8JsonStreamReader.StreamState.EndOfStream;
+                else
+                    return null;  // There are no more bytes in stream or the ReadData buffer.
+            }
+        }
+
+        private object ParseIntegerOrFloatNumber(ReadCache cache, ref Utf8JsonReader rdr)
+        {
+            if (rdr.HasValueSequence)
+            {
+                if (rdr.ValueSequence.IsSingleSegment)
+                {
+                    if (MemoryExtensions.LastIndexOf(rdr.ValueSequence.First.Span, (byte)'.') >= 0)
                         return ParseFloat(ref rdr, cache);
                 }
+                else
+                {
+                    foreach (var span in rdr.ValueSequence)
+                    {
+                        if (MemoryExtensions.LastIndexOf(span.Span, (byte)'.') >= 0)
+                            return ParseFloat(ref rdr, cache);
+                    }
+                }
             }
+            else if (MemoryExtensions.LastIndexOf(rdr.ValueSpan, (byte)'.') >= 0)
+                return ParseFloat(ref rdr, cache);
             return ParseInteger(ref rdr, cache);
         }
 
@@ -109,35 +127,19 @@ namespace Sellars.Transit.Impl
             if (rdr.CurrentDepth == 0 && rdr.TokenType != JsonTokenType.StartArray && rdr.TokenType != JsonTokenType.StartObject)
                 return;
 
-            if (streamReader.TryRead(rdr.CurrentState, CancellationToken, out ReadOnlySequence<byte> token))
+            do
             {
-                this.bytes = token;
-
-                rdr = new Utf8JsonReader(token, false, rdr.CurrentState);
-                var tokenAvailable = rdr.Read();
-
-                if (!tokenAvailable && !allowTokenUnavailable)
-                    throw new InvalidOperationException("No tokens available.");
-            }
-            else if (streamReader.ReadAsync(rdr.CurrentState, CancellationToken).Result is ReadOnlySequence<byte> bytes)
-            {
-                this.bytes = bytes;
-
-                rdr = new Utf8JsonReader(bytes, false, rdr.CurrentState);
-                var tokenAvailable = rdr.Read();
-
-                if (!tokenAvailable && !allowTokenUnavailable)
-                    throw new InvalidOperationException("No tokens available.");
-            }
-            else
-            {
-                if (allowTokenUnavailable)
+                if (streamReader.TryRead(ref rdr, Utf8JsonStreamReader.StreamState.InStream, CancellationToken))
                     return;
-                throw new InvalidOperationException("No bytes available.");
             }
+            while (streamReader.TryReadMoreDataAsync(CancellationToken).Result);
+
+            if (allowTokenUnavailable)
+                return;
+            throw new InvalidOperationException("No bytes available.");
         }
 
-        private string BytesAsString => System.Text.Encoding.UTF8.GetString(bytes.ToArray());
+        //private string BytesAsString => System.Text.Encoding.UTF8.GetString(bytes.ToArray());
 
         internal static object ParseUnknown(ref Utf8JsonReader rdr, JsonReaderOptions options, ReadCache cache) =>
             throw new NotSupportedException($"Not supported/implemented.  Type: {rdr.TokenType}.");
@@ -302,14 +304,33 @@ namespace Sellars.Transit.Impl
         /// </returns>
         public override object ParseVal(bool asDictionaryKey, ReadCache cache)
         {
-            var initialState = new Utf8JsonReader(ReadOnlySequence<byte>.Empty, this.options).CurrentState;
-            if (streamReader.ReadAsync(initialState, CancellationToken).Result is ReadOnlySequence<byte> bytes)
+            Utf8JsonReader rdr;
+            Utf8JsonStreamReader.StreamState streamState;
+
+            if (initialState is JsonReaderState state)
+                streamReader.Continue(state, out rdr, out streamState); // Continue parsing stream.
+            else if (!streamReader.TryReadMoreDataAsync(CancellationToken).Result)
+                return null; // No data available on first Parse (or cancelled).
+            else
             {
-                this.bytes = bytes;
-                var rdr = new Utf8JsonReader(bytes);
-                return ParseVal(ref rdr, options, asDictionaryKey, cache);
+                // Start parsing stream.
+                streamReader.Init(this.options, out rdr, out streamState);
+                initialState = rdr.CurrentState;
             }
-            return null;
+
+            while (true)
+            {
+                if (streamReader.TryRead(ref rdr, streamState, CancellationToken))
+                    return ParseVal(ref rdr, options, asDictionaryKey, cache);
+                // No more full tokens are available
+                if (streamReader.TryReadMoreDataAsync(CancellationToken).Result)
+                    continue;  // More data was read, so TryRead again.
+                else if (streamState == Utf8JsonStreamReader.StreamState.InStream)
+                    // TryRead one last time (See if last token was incomplete JSON number)
+                    streamState = Utf8JsonStreamReader.StreamState.EndOfStream;
+                else
+                    return null;  // There are no more bytes in stream or the ReadData buffer.
+            }
         }
 
         internal object ParseVal(ref Utf8JsonReader rdr, JsonReaderOptions options, bool asDictionaryKey, ReadCache cache)
@@ -317,7 +338,7 @@ namespace Sellars.Transit.Impl
             switch (rdr.TokenType)
             {
                 case JsonTokenType.Number:
-                    return ParseIntegerOrFloatNumber(cache, bytes, ref rdr);
+                    return ParseIntegerOrFloatNumber(cache, ref rdr);
                 case JsonTokenType.Null:
                     ReadToken(ref rdr);
                     return null;
