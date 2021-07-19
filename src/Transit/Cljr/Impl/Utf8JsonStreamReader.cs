@@ -22,6 +22,7 @@ namespace Sellars.Transit.Impl
         private readonly bool leaveOpen;
         private SequencePool.Rental sequenceRental = SequencePool.Shared.Rent();
         private SequencePosition? endOfLastToken;
+        private bool forceNewReader;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Utf8JsonStreamReader"/> class.
@@ -59,13 +60,14 @@ namespace Sellars.Transit.Impl
 
         public void Init(JsonReaderOptions options, out Utf8JsonReader reader, out StreamState streamState)
         {
-            reader = new Utf8JsonReader(ReadData, options);
+            reader = new Utf8JsonReader(ReadOnlySpan<byte>.Empty, options);
+            reader = new Utf8JsonReader(RemainingBytes, false, reader.CurrentState);
             streamState = StreamState.InStream;
         }
 
         public void Continue(JsonReaderState state, out Utf8JsonReader reader, out StreamState streamState)
         {
-            reader = new Utf8JsonReader(ReadData, false, state);
+            reader = new Utf8JsonReader(RemainingBytes, false, state);
             streamState = StreamState.InStream;
         }
 
@@ -159,6 +161,7 @@ namespace Sellars.Transit.Impl
                 bytesRead = await this.stream.ReadAsync(bytes, 0, bytes.Length).ConfigureAwait(false);
                 bytes.AsSpan(0, bytesRead).CopyTo(buffer.Span);
 #endif
+                this.forceNewReader |= bytesRead > 0;
                 return bytesRead > 0;
             }
             finally
@@ -177,13 +180,24 @@ namespace Sellars.Transit.Impl
         {
             if (this.ReadData.Length > 0)
             {
-                var rdr = new Utf8JsonReader(ReadData, streamState == StreamState.EndOfStream, reader.CurrentState);
+                var isFinalBlock = streamState == StreamState.EndOfStream;
+                var rdr = this.forceNewReader || isFinalBlock
+                    ? new Utf8JsonReader(RemainingBytes, isFinalBlock, reader.CurrentState)
+                    : reader;
+                this.forceNewReader = false;
 
-                if (rdr.Read())
+                try
                 {
-                    this.endOfLastToken = rdr.Position;
-                    reader = rdr;
-                    return true;
+                    if (rdr.Read())
+                    {
+                        this.endOfLastToken = rdr.Position;
+                        reader = rdr;
+                        return true;
+                    }
+                }
+                catch(JsonException e)
+                {
+                    Console.Error.WriteLine(e);
                 }
             }
 
