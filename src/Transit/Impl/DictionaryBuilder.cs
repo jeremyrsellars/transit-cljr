@@ -34,7 +34,7 @@ namespace Beerendonk.Transit.Impl
         /// </returns>
         public object Init()
         {
-            return ImmutableDictionary.Create<object, object>();
+            return ImmutableDictionary.CreateBuilder<object, object>();
         }
 
         /// <summary>
@@ -49,7 +49,8 @@ namespace Beerendonk.Transit.Impl
         /// </returns>
         public object Add(object dictionary, object key, object value)
         {
-            return ((IImmutableDictionary<object, object>)dictionary).Add(key, value);
+            ((ImmutableDictionary<object, object>.Builder)dictionary).Add(key, value);
+            return dictionary;
         }
 
         /// <summary>
@@ -61,7 +62,7 @@ namespace Beerendonk.Transit.Impl
         /// </returns>
         public object Complete(object dictionary)
         {
-            return dictionary;
+            return ((ImmutableDictionary<object, object>.Builder)dictionary).ToImmutable();
         }
     }
 }

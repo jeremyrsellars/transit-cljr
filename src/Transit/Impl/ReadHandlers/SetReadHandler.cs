@@ -57,17 +57,18 @@ namespace Beerendonk.Transit.Impl.ReadHandlers
         {
             public object Init()
             {
-                return ImmutableHashSet.Create<Object>();
+                return ImmutableHashSet.CreateBuilder<Object>();
             }
 
             public object Add(object list, object item)
             {
-                return ((IImmutableSet<object>)list).Add(item);
+                ((ImmutableHashSet<object>.Builder)list).Add(item);
+                return list;
             }
 
             public object Complete(object list)
             {
-                return list;
+                return ((ImmutableHashSet<object>.Builder)list).ToImmutable();
             }
         }
     }

@@ -57,17 +57,18 @@ namespace Beerendonk.Transit.Impl.ReadHandlers
         {
             public object Init()
             {
-                return ImmutableList.Create<Object>();
+                return ImmutableList.CreateBuilder<Object>();
             }
 
-            public object Add(object list, object item)
+            public object Add(object builder, object item)
             {
-                return ((IImmutableList<object>)list).Add(item);
+                ((ImmutableList<object>.Builder)builder).Add(item);
+                return builder;
             }
 
-            public object Complete(object list)
+            public object Complete(object builder)
             {
-                return list;
+                return ((ImmutableList<object>.Builder)builder).ToImmutable();
             }
         }
     }
