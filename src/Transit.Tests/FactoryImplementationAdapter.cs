@@ -81,13 +81,13 @@ namespace Sellars.Transit.Tests
                     },
                 },
 
-                // FastTransitFactory (System.Text.Json)
+                // Utf8TransitFactory (System.Text.Json)
                 new FactoryImplementationAdapter
                 {
-                    Name = typeof(Sellars.Transit.Alpha.FastTransitFactory).FullName,
-                    CreateReader = Sellars.Transit.Alpha.FastTransitFactory.Reader,
-                    CreateWriter = Sellars.Transit.Alpha.FastTransitFactory.Writer<object>,
-                    CreateCustomWriter = Sellars.Transit.Alpha.FastTransitFactory.Writer<object>,
+                    Name = typeof(Sellars.Transit.Alpha.Utf8TransitFactory).FullName,
+                    CreateReader = Sellars.Transit.Alpha.Utf8TransitFactory.Reader,
+                    CreateWriter = Sellars.Transit.Alpha.Utf8TransitFactory.Writer<object>,
+                    CreateCustomWriter = Sellars.Transit.Alpha.Utf8TransitFactory.Writer<object>,
                     SerializeJson = SerializeSystemTextJson,
                     SetTypeGuarantees = new []{
                         typeof(System.Collections.IEnumerable),
@@ -105,10 +105,10 @@ namespace Sellars.Transit.Tests
                 },
                 new FactoryImplementationAdapter
                 {
-                    Name = typeof(Sellars.Transit.Cljr.Alpha.FastTransitFactory).FullName,
-                    CreateReader = Sellars.Transit.Cljr.Alpha.FastTransitFactory.Reader,
-                    CreateWriter = Sellars.Transit.Cljr.Alpha.FastTransitFactory.TypedWriter<object>,
-                    CreateCustomWriter = Sellars.Transit.Cljr.Alpha.FastTransitFactory.TypedWriter<object>,
+                    Name = typeof(Sellars.Transit.Cljr.Alpha.Utf8TransitFactory).FullName,
+                    CreateReader = Sellars.Transit.Cljr.Alpha.Utf8TransitFactory.Reader,
+                    CreateWriter = Sellars.Transit.Cljr.Alpha.Utf8TransitFactory.TypedWriter<object>,
+                    CreateCustomWriter = Sellars.Transit.Cljr.Alpha.Utf8TransitFactory.TypedWriter<object>,
                     SerializeJson = SerializeSystemTextJson,
                     SetTypeGuarantees = new []{
                         typeof(System.Collections.IEnumerable),

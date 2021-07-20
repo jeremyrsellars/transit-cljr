@@ -6,7 +6,7 @@ using Format = Sellars.Transit.Alpha.TransitFactory.Format;
 
 namespace Sellars.Transit.Alpha
 {
-    public class FastTransitFactory
+    public class Utf8TransitFactory
     {
         /// <summary>
         /// Creates a writer instance.
@@ -53,7 +53,7 @@ namespace Sellars.Transit.Alpha
                     return ReaderFactory.GetMsgPackInstance(input, default, default);
                 case Format.Json:
                 case Format.JsonVerbose:
-                    return ReaderFactory.GetFastJsonInstance(input, default, default);
+                    return ReaderFactory.GetUtf8JsonInstance(input, default, default);
                 default:
                     throw new ArgumentException("Unknown Writer type: " + type.ToString());
             }
@@ -69,7 +69,7 @@ namespace Sellars.Transit.Alpha
                     return ReaderFactory.GetMsgPackInstance(input, customHandlers, customDefaultHandler);
                 case Format.Json:
                 case Format.JsonVerbose:
-                    return ReaderFactory.GetFastJsonInstance(input, customHandlers, customDefaultHandler);
+                    return ReaderFactory.GetUtf8JsonInstance(input, customHandlers, customDefaultHandler);
                 default:
                     throw new ArgumentException("Unknown Writer type: " + type.ToString());
             }

@@ -132,7 +132,7 @@ namespace Beerendonk.Transit.Impl
         /// <param name="customHandlers">The custom handlers.</param>
         /// <param name="customDefaultHandler">The custom default handler.</param>
         /// <returns>A reader.</returns>
-        public static IReader GetFastJsonInstance(Stream input,
+        public static IReader GetUtf8JsonInstance(Stream input,
             IImmutableDictionary<string, IReadHandler> customHandlers,
             IDefaultReadHandler<object> customDefaultHandler)
         {

@@ -8,7 +8,7 @@ using WriterFactory = Sellars.Transit.Cljr.Impl.WriterFactory;
 
 namespace Sellars.Transit.Cljr.Alpha
 {
-    public class FastTransitFactory
+    public class Utf8TransitFactory
     {
         public static IWriter Writer(Format type, Stream output) =>
             Writer(type, output, null);
@@ -76,7 +76,7 @@ namespace Sellars.Transit.Cljr.Alpha
                     return ReaderFactory.GetMsgPackInstance(input, TransitFactory.ReadHandlerMap(customHandlers), customDefaultHandler);
                 case Format.Json:
                 case Format.JsonVerbose:
-                    return ReaderFactory.GetFastJsonInstance(input, TransitFactory.ReadHandlerMap(customHandlers), customDefaultHandler);
+                    return ReaderFactory.GetUtf8JsonInstance(input, TransitFactory.ReadHandlerMap(customHandlers), customDefaultHandler);
                 default:
                     throw new ArgumentException("Unknown Writer type: " + type.ToString());
             }
