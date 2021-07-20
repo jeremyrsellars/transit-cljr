@@ -4,8 +4,8 @@
     <TargetFrameworks>netstandard2.1;net461</TargetFrameworks>
     <NeutralLanguage></NeutralLanguage>
     <RootNamespace></RootNamespace>
-    <Authors>Rick Beerendonk, Jeremy Sellars</Authors>
-    <Version>0.8.5.0</Version>
+    <Authors>Rick Beerendonk, Jeremy Sellars, Rich Hickey</Authors>
+    <Version>0.8.5.0-alpha</Version>
     <InformationalVersion>0.8.5-alpha</InformationalVersion>
     <Description>Transit is a data format and a set of libraries for conveying values between applications written in different languages. This library provides support for marshalling Transit data to/from .NET.</Description>
   </PropertyGroup>
@@ -18,6 +18,14 @@
     <Title>Transit for ClojureCLR</Title>
     <Description>A port of Transit-CSharp for Clojure CLR.</Description>
     <AssemblyName>Sellars.Transit.clj</AssemblyName>
+    <PackageId>transit-cljr</PackageId>
+    <Company />
+    <Copyright>Rick Beerendonk, Jeremy Sellars, Rich Hickey</Copyright>
+    <PackageProjectUrl>https://github.com/jeremyrsellars/transit-cljr</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/jeremyrsellars/transit-cljr</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>transit-format, clojure-cljr</PackageTags>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>
