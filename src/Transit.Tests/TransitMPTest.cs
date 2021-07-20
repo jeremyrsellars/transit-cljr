@@ -8,7 +8,6 @@ using clojure.lang;
 using MessagePack;
 using NUnit.Framework;
 using Sellars.Transit.Alpha;
-using Sellars.Transit.Numerics.Alpha;
 using TransitFactory = Sellars.Transit.Cljr.Alpha.TransitFactory;
 using TransitFormat = Sellars.Transit.Alpha.TransitFactory.Format;
 
@@ -109,7 +108,7 @@ namespace Sellars.Transit.Tests
         [Test]
         public void testReadBigDecimal() {
 
-            Assert.AreEqual(BigDecimal.Parse("42.5"), (BigDecimal)(BigRational)readerOf("~f42.5").Read());
+            Assert.AreEqual(BigDecimal.Parse("42.5"), (BigDecimal)readerOf("~f42.5").Read());
         }
 
         private long readTimeString(String timeString) {

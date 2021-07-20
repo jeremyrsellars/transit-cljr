@@ -1,4 +1,5 @@
-﻿// Copyright © 2014 Rick Beerendonk. All Rights Reserved.
+﻿// Modifications Copyright (C) 2021 Jeremy Sellars.
+// Copyright © 2014 Rick Beerendonk. All Rights Reserved.
 //
 // This code is a C# port of the Java version created and maintained by Cognitect, therefore
 //
@@ -44,7 +45,7 @@ namespace Beerendonk.Transit.Impl
             builder.Add("i", new IntegerReadHandler());
             builder.Add("?", new BooleanReadHandler());
             builder.Add("_", new NullReadHandler());
-            builder.Add("f", new BigRationalReadHandler());
+            builder.Add("f", new Sellars.Transit.Cljr.Impl.ReadHandlers.BigDecimalReadHandler());
             builder.Add("n", new BigIntegerReadHandler());
             builder.Add("d", new DoubleReadHandler());
             builder.Add("z", new SpecialNumberReadHandler());

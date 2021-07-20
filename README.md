@@ -104,15 +104,22 @@ JSON / JSON-Verbose|application/transit+json
 MessagePack|application/transit+msgpack
 
 ## Copyright and License
+
+Portions of this project are based on several projects licensed under the Apache License, Version 2.0.  No endorsement by the copyright holders is expressed or implied.
+
 Copyright © 2021 Jeremy Sellars.
 
-This library is a Fork of the C# version created and maintained by Rick Beerendonk, therefore
+Parts of this library are a Fork of the C# version created and maintained by Rick Beerendonk, therefore
 
 Copyright © 2014 Rick Beerendonk.
 
-This library is a C# port of the Java version created and maintained by Cognitect, therefore
+Parts of this library are a C# port of the Java version created and maintained by Cognitect, therefore
 
 Copyright © 2014 Cognitect
+
+Parts of this library are a ClojureClr port of the Clojure version created and maintained by Rich Hickey, therefore
+
+Copyright © 2014 Rich Hickey.
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
 http://www.apache.org/licenses/LICENSE-2.0

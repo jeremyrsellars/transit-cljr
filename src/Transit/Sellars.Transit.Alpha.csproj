@@ -4,7 +4,7 @@
     <TargetFrameworks>netstandard2.1;net461</TargetFrameworks>
     <NeutralLanguage></NeutralLanguage>
     <RootNamespace></RootNamespace>
-    <Authors>Rick Beerendonk, Jeremy Sellars, Rich Hickey</Authors>
+    <Authors>Jeremy Sellars, Rick Beerendonk, Cognitect, Rich Hickey</Authors>
     <Version>0.8.5.0-alpha</Version>
     <InformationalVersion>0.8.5-alpha</InformationalVersion>
     <Description>Transit is a data format and a set of libraries for conveying values between applications written in different languages. This library provides support for marshalling Transit data to/from .NET.</Description>
@@ -20,7 +20,7 @@
     <AssemblyName>Sellars.Transit.clj</AssemblyName>
     <PackageId>transit-cljr</PackageId>
     <Company />
-    <Copyright>Rick Beerendonk, Jeremy Sellars, Rich Hickey</Copyright>
+    <Copyright>Jeremy Sellars, Rick Beerendonk, Cognitect, Rich Hickey, Microsoft</Copyright>
     <PackageProjectUrl>https://github.com/jeremyrsellars/transit-cljr</PackageProjectUrl>
     <RepositoryUrl>https://github.com/jeremyrsellars/transit-cljr</RepositoryUrl>
     <RepositoryType>git</RepositoryType>

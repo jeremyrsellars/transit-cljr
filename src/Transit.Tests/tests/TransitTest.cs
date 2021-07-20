@@ -1,4 +1,5 @@
-﻿// Copyright © 2014 Rick Beerendonk. All Rights Reserved.
+﻿// Modifications Copyright (C) 2021 Jeremy Sellars.
+// Copyright © 2014 Rick Beerendonk. All Rights Reserved.
 //
 // This code is a C# port of the Java version created and maintained by Cognitect, therefore
 //
@@ -27,7 +28,6 @@ using System.Linq;
 using System.Text;
 using clojure.lang;
 using Sellars.Transit.Alpha;
-using Sellars.Transit.Numerics.Alpha;
 using NUnit.Framework;
 using Sellars.Transit.Tests;
 using Sellars.Transit.Util.Alpha;
@@ -123,19 +123,6 @@ namespace Beerendonk.Transit.Tests
             AssertAreEqual<double>(double.NaN, Reader("\"~zNaN\"").Read<double>());
             AssertAreEqual<double>(double.PositiveInfinity, Reader("\"~zINF\"").Read<double>());
             AssertAreEqual<double>(double.NegativeInfinity, Reader("\"~z-INF\"").Read<double>());
-        }
-
-        [Test]
-        public void TestReadBigRational()
-        {
-            Assert.AreEqual(new BigRational(12.345M), Reader("\"~f12.345\"").Read<BigRational>());
-            Assert.AreEqual(new BigRational(-12.345M), Reader("\"~f-12.345\"").Read<BigRational>());
-            Assert.AreEqual(new BigRational(0.1001M), Reader("\"~f0.1001\"").Read<BigRational>());
-            Assert.AreEqual(new BigRational(0.01M), Reader("\"~f0.01\"").Read<BigRational>());
-            Assert.AreEqual(new BigRational(0.1M), Reader("\"~f0.1\"").Read<BigRational>());
-            Assert.AreEqual(new BigRational(1M), Reader("\"~f1\"").Read<BigRational>());
-            Assert.AreEqual(new BigRational(10M), Reader("\"~f10\"").Read<BigRational>());
-            Assert.AreEqual(new BigRational(420.0057M), Reader("\"~f420.0057\"").Read<BigRational>());
         }
 
         [Test]

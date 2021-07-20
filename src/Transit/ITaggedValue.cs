@@ -1,9 +1,9 @@
-
-// Copyright � 2014 Rick Beerendonk. All Rights Reserved.
+// Modifications Copyright (C) 2021 Jeremy Sellars.
+// Copyright (C) 2014 Rick Beerendonk. All Rights Reserved.
 //
 // This code is a C# port of the Java version created and maintained by Cognitect, therefore
 //
-// Copyright � 2014 Cognitect. All Rights Reserved.
+// Copyright (C) 2014 Cognitect. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.

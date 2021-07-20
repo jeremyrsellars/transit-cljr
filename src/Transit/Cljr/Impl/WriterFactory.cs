@@ -1,4 +1,5 @@
-﻿// Copyright © 2014 Rick Beerendonk. All Rights Reserved.
+﻿// Modifications Copyright (C) 2021 Jeremy Sellars.
+// Copyright © 2014 Rick Beerendonk. All Rights Reserved.
 //
 // This code is a C# port of the Java version created and maintained by Cognitect, therefore
 //
@@ -57,8 +58,6 @@ namespace Sellars.Transit.Cljr.Impl
             builder.Add(typeof(BigDecimal), new ToStringWriteHandler("f"));
             builder.Add(typeof(float), new FloatWriteHandler());
             builder.Add(typeof(double), new DoubleWriteHandler());
-            // TODO
-            //builder.Add(typeof(BigRational), new ToStringWriteHandler("f"));
             builder.Add(typeof(char), new ToStringWriteHandler("c"));
             builder.Add(typeof(Keyword), new KeywordWriteHandler(":"));
             builder.Add(typeof(Symbol), new ToStringWriteHandler("$"));
