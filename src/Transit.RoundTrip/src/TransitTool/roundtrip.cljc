@@ -201,6 +201,42 @@
 
 #_ (run-command ["test-dir" "examples"])
 
+(defmethod describe-command :test-cache describe-command_test-cache
+  [command]
+  "Test multiple read/write a hard-coded example designed to test the write/read cache.")
+(defmethod run-command :test-cache run-command_test-cache
+  [[command dir & encodings]]
+  (let [encodings (or (seq (map keyword encodings)) (seq all-encodings))
+        examples [{:alpha "a", :beta "b", :echo {:alpha "a", :beta "b"}}
+                  {:king "fisher" :artichoke {:beta "b"}, :echo {:king "fisher" :artichoke {:beta "b"}}}
+                  {:kale      {:alpha "a"}, :echo {:kale      {:alpha "a"}}}]
+        stats (atom {:= 0, :not= 0 :problems {}})]
+    (doseq [encoding encodings]
+      (let [example-values examples
+            temp-f (doto (apply write-examples (example-file dir "cache" encoding) encoding example-values)
+                     #?(:clj (.deleteOnExit)))
+            actual-values (read-examples temp-f encoding)]
+        ;(println :example-values example-values)
+        ;(println :actual-values actual-values)
+        (doall
+          (map
+            (fn upd-stats [expected actual ex-args]
+              (let [equal? (= expected actual)]
+                (swap! stats update (if equal? := :not=) inc)
+                (when-not equal?
+                  (swap! stats update-in [:problems encoding] conj (str (apply example-file ex-args))))))
+            example-values
+            (concat actual-values (repeat nil))
+            examples))
+        #?(;:clj (io/delete-file temp-f)
+           :cljr (.Delete temp-f))))
+    (if (pos? (:not= @stats))
+      (binding [*out* *err*]
+        (println "Mismatches occurred")))
+    @stats))
+
+#_ (run-command ["test-cache" "examples"])
+
 (defmethod describe-command :test-multi describe-command_test-multi
   [command]
   "Test multiple read/write from a file generated from a directory of sample data.")
