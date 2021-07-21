@@ -30,7 +30,6 @@ using ReaderFactory = Sellars.Transit.Cljr.Impl.ReaderFactory;
 using WriterFactory = Sellars.Transit.Cljr.Impl.WriterFactory;
 using Sellars.Transit.Util;
 using System.Linq;
-using System.Collections;
 using Sellars.Transit.Cljr.Impl.Alpha;
 
 namespace Sellars.Transit.Cljr.Alpha
@@ -39,8 +38,17 @@ namespace Sellars.Transit.Cljr.Alpha
     /// Main entry point for using transit-cljr library. Provides methods to construct
     /// readers and writers, as well as helpers to make various other values.
     /// </summary>
-    public class TransitFactory
+    public static class TransitFactory
     {
+        public static readonly WriterImplementation WriterFunc = Writer;
+        public static readonly ReaderImplementation ReaderFunc = Reader;
+
+        public delegate IWriter WriterImplementation(
+            Format type, Stream output, object customHandlers,
+            IWriteHandler defaultHandler = null, Func<object, object> transform = null);
+        public delegate IReader ReaderImplementation(
+            Format type, Stream input, object customHandlers, IDefaultReadHandler customDefaultHandler);
+
         public static IWriter Writer(Format type, Stream output) =>
             Writer(type, output, null);
 

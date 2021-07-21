@@ -18,19 +18,19 @@
 // limitations under the License.
 
 using Newtonsoft.Json;
-using Beerendonk.Transit.Impl.ReadHandlers;
-using System;
 using System.Collections.Immutable;
 using System.IO;
 using Sellars.Transit.Alpha;
 using Sellars.Transit.Spi.Alpha;
+using Beerendonk.Transit.Impl;
+using Beerendonk.Transit.Impl.ReadHandlers;
 
-namespace Beerendonk.Transit.Impl
+namespace Sellars.Transit.Cljr.Impl
 {
     /// <summary>
     /// Represents a reader factory.
     /// </summary>
-    internal partial class ReaderFactory
+    internal partial class Utf8ReaderFactory
     {
         /// <summary>
         /// Get the default handlers.
@@ -45,7 +45,7 @@ namespace Beerendonk.Transit.Impl
             builder.Add("i", new IntegerReadHandler());
             builder.Add("?", new BooleanReadHandler());
             builder.Add("_", new NullReadHandler());
-            builder.Add("f", new Sellars.Transit.Cljr.Impl.ReadHandlers.BigDecimalReadHandler());
+            builder.Add("f", new ReadHandlers.BigDecimalReadHandler());
             builder.Add("n", new BigIntegerReadHandler());
             builder.Add("d", new DoubleReadHandler());
             builder.Add("z", new SpecialNumberReadHandler());
@@ -56,10 +56,10 @@ namespace Beerendonk.Transit.Impl
             builder.Add("u", new GuidReadHandler());
             builder.Add("b", new BinaryReadHandler());
             builder.Add("\'", new IdentityReadHandler());
-            builder.Add("set", new SetReadHandler());
-            builder.Add("list", new ListReadHandler());
-            builder.Add("ratio", new RatioReadHandler());
-            builder.Add("cmap", new CDictionaryReadHandler());
+            builder.Add("set", new ReadHandlers.SetReadHandler());
+            builder.Add("list", new ReadHandlers.ListReadHandler());
+            builder.Add("ratio", new ReadHandlers.RatioReadHandler());
+            builder.Add("cmap", new ReadHandlers.CMapReadHandler());
             builder.Add("link", new LinkReadHandler());
 
             return builder.ToImmutable();
@@ -91,7 +91,7 @@ namespace Beerendonk.Transit.Impl
 
         public static IImmutableDictionary<string, IReadHandler> Handlers(IImmutableDictionary<string, IReadHandler> customHandlers) 
         {
-            if (customHandlers is Sellars.Transit.Cljr.Impl.Alpha.ReadHandlerMap rhm)
+            if (customHandlers is Alpha.ReadHandlerMap rhm)
                 return rhm;
 
             DisallowOverridingGroundTypes(customHandlers);
@@ -107,9 +107,19 @@ namespace Beerendonk.Transit.Impl
             return handlers;
         }
 
-        private static IDefaultReadHandler<object> DefaultHandler(IDefaultReadHandler<object> customDefaultHandler)
+        public static IDefaultReadHandler DefaultHandler(IDefaultReadHandler customDefaultHandler = null)
         {
-            return customDefaultHandler != null ? customDefaultHandler : DefaultDefaultHandler();
+            if (customDefaultHandler == null)
+                return DefaultReadHandlerAdapter.Adapt(DefaultDefaultHandler());
+            return customDefaultHandler;
+        }
+
+        public static IDefaultReadHandler<object> TypedDefaultHandler(IDefaultReadHandler customDefaultHandler = null)
+        {
+            if (customDefaultHandler == null)
+                return DefaultDefaultHandler();
+            return customDefaultHandler as IDefaultReadHandler<object>
+                ?? DefaultReadHandlerAdapter.Adapt(customDefaultHandler);
         }
 
         /// <summary>
@@ -123,7 +133,21 @@ namespace Beerendonk.Transit.Impl
             IImmutableDictionary<string, IReadHandler> customHandlers,
             IDefaultReadHandler<object> customDefaultHandler)
         {
-            return new JsonReader(input, Handlers(customHandlers), DefaultHandler(customDefaultHandler));
+            return new JsonReader(input, Handlers(customHandlers), customDefaultHandler ?? DefaultDefaultHandler());
+        }
+
+        /// <summary>
+        /// Gets the JSON instance.
+        /// </summary>
+        /// <param name="input">The input.</param>
+        /// <param name="customHandlers">The custom handlers.</param>
+        /// <param name="customDefaultHandler">The custom default handler.</param>
+        /// <returns>A reader.</returns>
+        public static IReader GetJsonInstance(Stream input,
+            IImmutableDictionary<string, IReadHandler> customHandlers,
+            IDefaultReadHandler customDefaultHandler)
+        {
+            return new Utf8JsonReader(input, Handlers(customHandlers), TypedDefaultHandler(customDefaultHandler) ?? DefaultDefaultHandler(), default);
         }
 
         /// <summary>
@@ -135,21 +159,25 @@ namespace Beerendonk.Transit.Impl
         /// <returns>A reader.</returns>
         public static IReader GetMsgPackInstance(Stream input,
             IImmutableDictionary<string, IReadHandler> customHandlers,
-            IDefaultReadHandler<object> customDefaultHandler)
+            IDefaultReadHandler customDefaultHandler)
         {
-            return new MsgPackReader(input, Handlers(customHandlers), DefaultHandler(customDefaultHandler),
-                MessagePack.MessagePackSerializerOptions.Standard);
+            return ReaderFactory.GetMsgPackInstance(input, customHandlers, customDefaultHandler);
+            //return new MsgPackReader(input, Handlers(customHandlers), TypedDefaultHandler(customDefaultHandler) ?? DefaultDefaultHandler(),
+            //    MessagePack.MessagePackSerializerOptions.Standard);
         }
 
-        private class DefaultReadHandler : IDefaultReadHandler<ITaggedValue>
+        private class DefaultReadHandler : IDefaultReadHandler<ITaggedValue>, IDefaultReadHandler
         {
             public ITaggedValue FromRepresentation(string tag, object representation)
             {
                 return TransitFactory.TaggedValue(tag, representation);
             }
+
+            object IDefaultReadHandler.FromRepresentation(string tag, object representation) =>
+                FromRepresentation(tag, representation);
         }
 
-        internal abstract class Reader : IReader, IReaderSpi
+        private abstract class Reader : IReader, IReaderSpi
         {
             protected Stream input;
             protected IImmutableDictionary<string, IReadHandler> handlers;
@@ -176,7 +204,10 @@ namespace Beerendonk.Transit.Impl
                     Initialize();
                 }
 
-                return (T)p.Parse(cache.Init());
+                var v = (T)p.Parse(cache.Init());
+                if (v == null)
+                    return default;
+                return v;
             }
 
             object IReader.Read() => Read<object>();
@@ -197,7 +228,7 @@ namespace Beerendonk.Transit.Impl
             {
                 if (dictionaryBuilder == null)
                 {
-                    dictionaryBuilder = new DictionaryBuilder();
+                    dictionaryBuilder = new MapBuilder();
                 }
 
                 if (listBuilder == null)

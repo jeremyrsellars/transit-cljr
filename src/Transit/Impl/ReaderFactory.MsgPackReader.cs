@@ -12,7 +12,7 @@ namespace Beerendonk.Transit.Impl
     /// </summary>
     partial class ReaderFactory
     {
-        private class MsgPackReader : Reader
+        internal class MsgPackReader : Reader
         {
             public MsgPackReader(Stream input, IImmutableDictionary<string, IReadHandler> handlers, IDefaultReadHandler<object> defaultHandler,
                 MessagePackSerializerOptions options)

@@ -27,6 +27,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <ProjectReference Include="..\Transit.Utf8\Sellars.Transit.Utf8.Alpha.csproj" />
 	  <ProjectReference Include="..\Transit\Sellars.Transit.Alpha.csproj" />
 	</ItemGroup>
 

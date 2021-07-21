@@ -26,6 +26,14 @@
 
 (def formats #{:json :json-verbose :msgpack})
 
+(def implementations
+ #{{::implementation-name "Sellars.Transit.Cljr.Alpha.TransitFactory"
+    :reader-implementation Sellars.Transit.Cljr.Alpha.TransitFactory/ReaderFunc
+    :writer-implementation Sellars.Transit.Cljr.Alpha.TransitFactory/WriterFunc}
+   {::implementation-name "Sellars.Transit.Cljr.Alpha.Utf8TransitFactory"
+    :reader-implementation Sellars.Transit.Cljr.Alpha.Utf8TransitFactory/ReaderFunc
+    :writer-implementation Sellars.Transit.Cljr.Alpha.Utf8TransitFactory/WriterFunc}})
+
 (defonce gen-count-ref (atom 100))
 
 (s/def ::t/format formats)
@@ -64,21 +72,22 @@
 
 (defn test-round-trip
   [fmt value]
+ (doseq [{:keys [::implementation-name] :as implementation} implementations]
   (let [value    (walk-to-equatable-types value)
         stream   (MemoryStream. 2000)
         out      (doto stream (.set_Position 0))
-        w        (t/writer out fmt)
+        w        (t/writer out fmt implementation)
         _        (t/write w value)
         in       (doto stream (.set_Position 0))
         s        (.ReadToEnd (System.IO.StreamReader. in))
         in       (doto stream (.set_Position 0))
-        r        (t/reader in fmt)
+        r        (t/reader in fmt implementation)
         actual   (t/read r)]
     (is (= (walk-to-transit-types value) actual)
         (let [ok (= (walk-to-transit-types value) actual)]
-          (str (if ok "Correctly parsed " "Trouble with ") fmt " for\n"
+          (str (if ok "Correctly parsed " "Trouble with ") fmt " by " implementation-name " for\n"
                "(= " (pr-str value) " " (pr-str actual) ")\n"
-               (when-not ok s))))))
+               (when-not ok s)))))))
 
 (deftest json
   (doseq [example (gen-sample ::example)]
@@ -100,18 +109,18 @@
     x))
 
 (defn round-trip
-  [fmt value]
+  [fmt value implementation]
   (let [eq-value (walk-to-equatable-types value)
         stream   (MemoryStream. 2000)
         out      (doto stream (.set_Position 0))
-        w        (t/writer out fmt)
+        w        (t/writer out fmt implementation)
         _        (t/write w eq-value)
         in       (doto stream (.set_Position 0))
-        r        (t/reader in fmt)
+        r        (t/reader in fmt implementation)
         actual   (t/read r)]
     actual))
 (s/fdef round-trip
-  :args (s/cat :fmt ::t/format :value ::example)
+  :args (s/cat :fmt ::t/format :value ::example :opts implementations)
   :ret ::example
   :fn #(Debuggable/Equals
           (-> % :args :value walk-to-transit-types walk-to-equatable-types)

@@ -32,7 +32,7 @@ namespace Sellars.Transit.Alpha
     /// Main entry point for using transit-cljr library. Provides methods to construct
     /// readers and writers, as well as helpers to make various other values.
     /// </summary>
-    public class TransitFactory
+    public static class TransitFactory
     {
         /// <summary>
         /// Transit formats.

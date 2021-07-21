@@ -24,6 +24,14 @@
 
 (def formats [:json :json-verbose :msgpack])
 
+(def implementations
+ #{{::implementation-name "Sellars.Transit.Cljr.Alpha.TransitFactory"
+    :reader-implementation Sellars.Transit.Cljr.Alpha.TransitFactory/ReaderFunc
+    :writer-implementation Sellars.Transit.Cljr.Alpha.TransitFactory/WriterFunc}
+   {::implementation-name "Sellars.Transit.Cljr.Alpha.Utf8TransitFactory"
+    :reader-implementation Sellars.Transit.Cljr.Alpha.Utf8TransitFactory/ReaderFunc
+    :writer-implementation Sellars.Transit.Cljr.Alpha.Utf8TransitFactory/WriterFunc}})
+
 (deftest Something
   (is true "true"))
 
@@ -32,6 +40,9 @@
   (doseq [fmt formats]
     (test-round-trip fmt value)))
  ([fmt value]
+  (doseq [implementation implementations]
+    (test-round-trip fmt value implementation)))
+ ([fmt value {:keys [::implementation-name] :as implementation}]
   (let [stream (MemoryStream. 2000)
         out      (doto stream (.set_Position 0))
         w        (t/writer out fmt)
@@ -42,7 +53,7 @@
         r        (t/reader in fmt)
         actual   (t/read r)]
     (is (Debuggable/Equals value actual)
-        (str "Testing " fmt " for "
+        (str "Testing " fmt " by " implementation-name " for "
              "(= " (pr-str value) " " (pr-str actual) ") "
              s)))))
 

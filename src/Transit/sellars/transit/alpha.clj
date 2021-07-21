@@ -21,7 +21,9 @@
   (:import [Sellars.Transit.Alpha IWriteHandler IReadHandler IListReadHandler IDictionaryReadHandler IDefaultReadHandler
             IReader IWriter
             IListReader TransitFactory+Format IDictionaryReader]
-           [Sellars.Transit.Cljr.Alpha TransitFactory]
+           [Sellars.Transit.Cljr.Alpha TransitFactory
+                                       TransitFactory+ReaderImplementation
+                                       TransitFactory+WriterImplementation]
            [Sellars.Transit.Spi.Alpha IReaderSpi]
            [System.IO Stream]))
 
@@ -121,12 +123,13 @@
    :transform - a function of one argument that will transform values before
    they are written."
   ([out type] (writer out type {}))
-  ([^Stream out type {:keys [handlers default-handler transform]}]
+  ([^Stream out type {:keys [handlers default-handler transform writer-implementation]}]
    (if (#{:json :json-verbose :msgpack} type)
        (let [handler-map (if (instance? HandlerMapContainer handlers)
                            (handler-map handlers)
                            (merge default-write-handlers handlers))]
-         (Writer. (TransitFactory/Writer (transit-format type) out handler-map default-handler
+         (Writer. (.Invoke ^TransitFactory+WriterImplementation (or writer-implementation TransitFactory/WriterFunc)
+                    (transit-format type) out handler-map default-handler
                     (when transform
                       (condp instance? transform
                         |System.Func`2[System.Object,System.Object]|
@@ -241,12 +244,13 @@
    :default-handler is not specified, non-readable values are returned
    as TaggedValues."
   ([in type] (reader in type {}))
-  ([^Stream in type {:keys [handlers default-handler]}]
+  ([^Stream in type {:keys [handlers default-handler reader-implementation]}]
    (if (#{:json :json-verbose :msgpack} type)
        (let [handler-map (if (instance? HandlerMapContainer handlers)
                            (handler-map handlers)
                            (merge default-read-handlers handlers))
-             reader (TransitFactory/Reader (transit-format type)
+             reader (.Invoke ^TransitFactory+ReaderImplementation (or reader-implementation TransitFactory/ReaderFunc)
+                                           (transit-format type)
                                            in
                                            handler-map
                                            (when default-handler

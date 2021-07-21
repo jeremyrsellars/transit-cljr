@@ -10,6 +10,9 @@ namespace Sellars.Transit.Cljr.Alpha
 {
     public class Utf8TransitFactory
     {
+        public static readonly TransitFactory.WriterImplementation WriterFunc = Writer;
+        public static readonly TransitFactory.ReaderImplementation ReaderFunc = Reader;
+
         public static IWriter Writer(Format type, Stream output) =>
             Writer(type, output, null);
 
@@ -53,10 +56,10 @@ namespace Sellars.Transit.Cljr.Alpha
                     return WriterFactory.GetMsgPackInstance<T>(output, customHandlers,
                         defaultHandler, transform);
                 case Format.Json:
-                    return WriterFactory.GetUtf8JsonInstance<T>(output, customHandlers, false,
+                    return Utf8WriterFactory.GetJsonInstance<T>(output, customHandlers, false,
                         defaultHandler, transform);
                 case Format.JsonVerbose:
-                    return WriterFactory.GetUtf8JsonInstance<T>(output, customHandlers, true,
+                    return Utf8WriterFactory.GetJsonInstance<T>(output, customHandlers, true,
                         defaultHandler, transform);
                 default:
                     throw new ArgumentException("Unknown Writer type: " + type.ToString());
@@ -76,7 +79,7 @@ namespace Sellars.Transit.Cljr.Alpha
                     return ReaderFactory.GetMsgPackInstance(input, TransitFactory.ReadHandlerMap(customHandlers), customDefaultHandler);
                 case Format.Json:
                 case Format.JsonVerbose:
-                    return ReaderFactory.GetUtf8JsonInstance(input, TransitFactory.ReadHandlerMap(customHandlers), customDefaultHandler);
+                    return Utf8ReaderFactory.GetJsonInstance(input, TransitFactory.ReadHandlerMap(customHandlers), customDefaultHandler);
                 default:
                     throw new ArgumentException("Unknown Writer type: " + type.ToString());
             }

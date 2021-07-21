@@ -7,7 +7,7 @@
     <Authors>Jeremy Sellars, Rick Beerendonk, Cognitect, Rich Hickey</Authors>
     <Version>0.8.5.0-alpha</Version>
     <InformationalVersion>0.8.5-alpha</InformationalVersion>
-    <Description>Transit is a data format and a set of libraries for conveying values between applications written in different languages. This library provides support for marshalling Transit data to/from .NET.</Description>
+    <Description>Alternate base encoding libraries.  Transit is a data format and a set of libraries for conveying values between applications written in different languages. This library provides support for marshalling Transit data to/from .NET.</Description>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
@@ -15,10 +15,10 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <Title>Transit for ClojureCLR</Title>
+    <Title>More Transit for ClojureCLR</Title>
     <Description>A port of Transit-CSharp for Clojure CLR.</Description>
-    <AssemblyName>Sellars.Transit.clj</AssemblyName>
-    <PackageId>transit-cljr</PackageId>
+    <AssemblyName>Sellars.Transit.Utf8</AssemblyName>
+    <PackageId>transit-cljr.utf8</PackageId>
     <Company />
     <Copyright>Jeremy Sellars, Rick Beerendonk, Cognitect, Rich Hickey</Copyright>
     <PackageProjectUrl>https://github.com/jeremyrsellars/transit-cljr</PackageProjectUrl>
@@ -38,8 +38,14 @@
   <ItemGroup>
     <PackageReference Include="Clojure" Version="1.10.0" />
     <PackageReference Include="MessagePack" Version="2.2.85" />
+    <PackageReference Include="nerdbank.streams" Version="2.4.48" />
     <PackageReference Include="Newtonsoft.Json" Version="6.0.4" />
     <PackageReference Include="System.Collections.Immutable" Version="5.0.0" />
+    <PackageReference Include="System.Text.Json" Version="5.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Transit\Sellars.Transit.Alpha.csproj" />
   </ItemGroup>
 
   <ItemGroup>
