@@ -652,6 +652,7 @@ namespace Beerendonk.Transit.Tests
             string encoded = System.Convert.ToBase64String(bytes);
 
             Assert.AreEqual(ScalarVerbose("\"~b" + encoded + "\""), WriteJsonVerbose(bytes));
+            Assert.AreEqual(Scalar("\"~b" + encoded + "\""), WriteJson(bytes));
         }
 
         [Test]

@@ -15,12 +15,13 @@ namespace TimeExecution
     //using SUTTransitFactory = TransitFactory;
     class Program
     {
+        const int bytesSize = 1024;
 #if DEBUG
-        const int iterations = 2;//1000000;
+        const int iterations = 1000000;
 #else
         const int iterations = 1000000;
 #endif
-        private const int InitCapacity = iterations * 200; // bytes per iteration
+        private const int InitCapacity = iterations * (200 + bytesSize * 3 / 2); // bytes per iteration
         static System.Diagnostics.Stopwatch stopwatch = System.Diagnostics.Stopwatch.StartNew();
         static int ctr;
         static TimeSpan prevReport = stopwatch.Elapsed;
@@ -30,7 +31,7 @@ namespace TimeExecution
         {
             var elapsed = stopwatch.Elapsed;
             Console.WriteLine(string.Join("\t", new string[] {
-                ctr.ToString(),
+                ctr++.ToString(),
                 FormatTimeSpan(elapsed),
                 FormatTimeSpan(elapsed - prevReport),
                 per is int p ? FormatTimeSpan((elapsed - prevReport) / p) : "          ",
@@ -59,6 +60,7 @@ namespace TimeExecution
         {
             Inc("Init: " + typeof(SUTTransitFactory));
             using var stream = new MemoryStream(InitCapacity);
+            var bytes = Enumerable.Range(0, bytesSize).Select(i => unchecked((byte)i)).ToArray();
             var val =
                 //new ArrayList
                 //{
@@ -73,8 +75,8 @@ namespace TimeExecution
                 //    new MyVersion(1,2,3,4),
                 //    //new MyNamedValue("An example", Math.PI, new MyVersion(1,2,3,4)),
                 //}
-                new MyNamedValue("An example", Math.PI, new MyVersion(1, 2, 3, 4), "I'm some meta")
                 // new MyVersion(1, 2, 3, 4)
+                new MyNamedValue("An example", Math.PI, new MyVersion(1, 2, 3, 4), "I'm some meta", bytes)
                 ///new[] { new MyVersion(1, 2, 3, 4), new MyVersion(10, 2, 3, 4), new MyVersion(100, 2, 3, 4), new MyVersion(1000, 2, 3, 4) }
                 ;
 

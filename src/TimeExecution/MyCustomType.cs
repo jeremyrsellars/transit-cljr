@@ -6,7 +6,7 @@ using Sellars.Transit.Alpha;
 
 namespace TimeExecution
 {
-    public record MyNamedValue(string ValueName, double Value, MyVersion Version, string Metadata);
+    public record MyNamedValue(string ValueName, double Value, MyVersion Version, string Metadata, byte[] Bytes);
 
     public class MyNamedValueWriteHandler : IWriteHandler
     {
@@ -20,6 +20,7 @@ namespace TimeExecution
                 {nameof(v.Value), v.Value },
                 {nameof(v.Version), v.Version },
                 {nameof(v.Metadata), v.Metadata },
+                {nameof(v.Bytes), v.Bytes },
             };
         }
 
@@ -37,7 +38,8 @@ namespace TimeExecution
                 (string)parts[nameof(MyNamedValue.ValueName)],
                 Convert.ToDouble(parts[nameof(MyNamedValue.Value)]),
                 (MyVersion)parts[nameof(MyNamedValue.Version)],
-                (string)parts[nameof(MyNamedValue.Metadata)]);
+                (string)parts[nameof(MyNamedValue.Metadata)],
+                (byte[])parts[nameof(MyNamedValue.Bytes)]);
         }
 
         public string Tag(object obj) => nameof(MyNamedValue);
@@ -55,27 +57,17 @@ namespace TimeExecution
                 rdr.Read();
                 object val =
                 (rdr.TokenType) switch {
-                    JsonTokenType.String => rdr.GetString(),
+                    JsonTokenType.String => 
+                        prop switch
+                        {
+                            nameof(MyNamedValue.Bytes) => rdr.GetBytesFromBase64(),
+                            _ => rdr.GetString(),
+                        },
                     JsonTokenType.Number => rdr.GetDouble(),
                     JsonTokenType.StartArray when prop == nameof(MyNamedValue.Version) =>
                         JsonSerializer.Deserialize<MyVersion>(ref rdr, options),
                     _ => throw new NotSupportedException(prop+"@"+ rdr.TokenType),
                 };
-                //else if(rdr.ValueTextEquals(nameof(MyNamedValue.Value)))
-                //{
-                //    rdr.Read();
-                //    Value = rdr.GetDouble();
-                //}
-                //else if()
-                //{
-                //    rdr.Read();
-                //    Version = 
-                //}
-                //else if(rdr.ValueTextEquals(nameof(MyNamedValue.Metadata)))
-                //{
-                //    rdr.Read();
-                //    Meta = rdr.GetString();
-                //}
                 dict[prop] = val;
                 rdr.Read();
             }
@@ -84,7 +76,8 @@ namespace TimeExecution
                 (string)dict[nameof(MyNamedValue.ValueName)], 
                 (double)dict[nameof(MyNamedValue.Value)], 
                 (MyVersion)dict[nameof(MyNamedValue.Version)], 
-                (string)dict[nameof(MyNamedValue.Metadata)]);
+                (string)dict[nameof(MyNamedValue.Metadata)],
+                (byte[])dict[nameof(MyNamedValue.Bytes)]);
         }
 
         public override void Write(Utf8JsonWriter writer, MyNamedValue v, JsonSerializerOptions options) =>
@@ -100,7 +93,7 @@ namespace TimeExecution
     {
         public override MyNamedValue Read(ref Utf8JsonReader rdr, Type typeToConvert, JsonSerializerOptions options)
         {
-            var (Name, Value, Version, Meta) = new MyNamedValue(default, default, default, default);
+            var (Name, Value, Version, Meta, Bytes) = new MyNamedValue(default, default, default, default, default);
             rdr.Read(); // StartObject
             while (rdr.TokenType != JsonTokenType.EndObject)
             {
@@ -125,10 +118,15 @@ namespace TimeExecution
                     rdr.Read();
                     Meta = rdr.GetString();
                 }
+                else if (rdr.ValueTextEquals(nameof(MyNamedValue.Bytes)))
+                {
+                    rdr.Read();
+                    Bytes = rdr.GetBytesFromBase64();
+                }
                 rdr.Read();
             }
 
-            return new MyNamedValue(Name, Value, Version, Meta);
+            return new MyNamedValue(Name, Value, Version, Meta, Bytes);
         }
 
         public override void Write(Utf8JsonWriter writer, MyNamedValue v, JsonSerializerOptions options) =>

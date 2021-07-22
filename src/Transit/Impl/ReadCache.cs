@@ -24,8 +24,8 @@ namespace Beerendonk.Transit.Impl
     /// </summary>
     internal class ReadCache
     {
-        private object[] cache;
-        private int index;
+        protected object[] cache;
+        protected int index;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ReadCache"/> class.

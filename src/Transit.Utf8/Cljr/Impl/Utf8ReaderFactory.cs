@@ -194,7 +194,7 @@ namespace Sellars.Transit.Cljr.Impl
                 this.input = input;
                 this.handlers = handlers;
                 this.defaultHandler = defaultHandler;
-                this.cache = new ReadCache();
+                this.cache = false ? new ReadCache() : new Sellars.Transit.Impl.Utf8ReadCache();
             }
 
             public T Read<T>()

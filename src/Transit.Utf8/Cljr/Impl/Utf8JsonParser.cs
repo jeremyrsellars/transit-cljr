@@ -6,6 +6,7 @@ using System;
 using System.Text.Json;
 using System.Buffers;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace Sellars.Transit.Impl
 {
@@ -79,7 +80,7 @@ namespace Sellars.Transit.Impl
                         case JsonTokenType.False:
                             return ParseBoolean(ref rdr, cache);
                         case JsonTokenType.String:
-                            return cache.CacheRead(ParseString(ref rdr, cache), false, this);
+                            return CacheReadParseString(ref rdr, cache, false);
                         case JsonTokenType.StartArray:
                             return ParseArray(ref rdr, options, false, cache, null);
                         case JsonTokenType.StartObject:
@@ -170,6 +171,11 @@ namespace Sellars.Transit.Impl
             var v = rdr.GetString();
             ReadToken(ref rdr);
             return v;
+        }
+
+        private object CacheReadParseString(ref Utf8JsonReader rdr, ReadCache cache, bool asDictionaryKey)
+        {
+            return ((Utf8ReadCache)cache).CacheReadParseString(ref rdr, asDictionaryKey, this);
         }
 
         internal object ParseArray(ref Utf8JsonReader rdr, JsonReaderOptions options, bool asDictionaryKey, ReadCache cache, IListReadHandler handler)
@@ -347,7 +353,7 @@ namespace Sellars.Transit.Impl
                     return ParseBoolean(ref rdr, cache);
                 case JsonTokenType.String:
                 case JsonTokenType.PropertyName:
-                    return cache.CacheRead(ParseString(ref rdr, cache), asDictionaryKey, this);
+                    return CacheReadParseString(ref rdr, cache, asDictionaryKey);
                 case JsonTokenType.StartArray:
                     return ParseArray(ref rdr, options, asDictionaryKey, cache, null);
                 case JsonTokenType.StartObject:

@@ -79,7 +79,7 @@ namespace Sellars.Transit.Impl
                 this.input = input;
                 this.handlers = handlers;
                 this.defaultHandler = defaultHandler;
-                this.cache = new ReadCache();
+                this.cache = false ? new ReadCache() : new Utf8ReadCache();
             }
 
             public T Read<T>()
