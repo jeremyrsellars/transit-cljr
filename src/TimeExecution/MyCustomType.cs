@@ -86,6 +86,7 @@ namespace TimeExecution
                 {nameof(v.Value), v.Value },
                 {nameof(v.Version), v.Version },
                 {nameof(v.Metadata), v.Metadata },
+                {nameof(v.Bytes), v.Bytes },
             }, options);
     }
 
@@ -135,6 +136,7 @@ namespace TimeExecution
                 {nameof(v.Value), v.Value },
                 {nameof(v.Version), v.Version },
                 {nameof(v.Metadata), v.Metadata },
+                {nameof(v.Bytes), v.Bytes },
             }, options);
     }
 }
