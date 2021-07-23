@@ -210,7 +210,9 @@ namespace Sellars.Transit.Impl
                                     var st = SpanTag.TryFromSpan(tagBytes);
 
                                     string tag = st?.GetValue() ?? ((char)tagBytes[0]).ToString();
-                                    return AdvanceTokenAndReturn(ref rdr, Decode(tag, ref rdr, 2));
+                                    var decoded = Decode(tag, ref rdr, 2);
+                                    ReadToken(ref rdr);
+                                    return decoded;
                                 }
                         }
                     case Constants.Sub:

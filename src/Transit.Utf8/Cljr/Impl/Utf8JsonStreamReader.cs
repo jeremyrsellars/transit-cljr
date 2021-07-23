@@ -178,28 +178,24 @@ namespace Sellars.Transit.Impl
         /// <returns><c>true</c> if a complete data structure was found; <c>false</c> otherwise.</returns>
         private bool TryReadNextToken(ref Utf8JsonReader reader, StreamState streamState)
         {
-            var rb = RemainingBytes;
-            if (!rb.IsEmpty)
+            var isFinalBlock = streamState == StreamState.EndOfStream;
+            if (forceNewReader || isFinalBlock)
             {
-                var isFinalBlock = streamState == StreamState.EndOfStream;
-                var rdr = this.forceNewReader || isFinalBlock
-                    ? new Utf8JsonReader(rb, isFinalBlock, reader.CurrentState)
-                    : reader;
-                this.forceNewReader = false;
+                forceNewReader = false;
+                reader = new Utf8JsonReader(RemainingBytes, isFinalBlock, reader.CurrentState);
+            }
 
-                try
+            try
+            {
+                if (reader.Read())
                 {
-                    if (rdr.Read())
-                    {
-                        this.endOfLastToken = rdr.Position;
-                        reader = rdr;
-                        return true;
-                    }
+                    endOfLastToken = reader.Position;
+                    return true;
                 }
-                catch(JsonException e)
-                {
-                    Console.Error.WriteLine(e);
-                }
+            }
+            catch (JsonException)
+            {
+                throw;
             }
 
             return false;
