@@ -47,7 +47,7 @@ namespace TimeExecution
             //if (ts.TotalMinutes >= 1)
             //    return ts.ToString("c");
             if (ts.TotalSeconds >= 1)
-                return PadLeft(ts.ToString(@"ss\.fff\ \s\ \ "));
+                return PadLeft(ts.TotalSeconds.ToString(@"0.000\ \s\ \ "));
             if (ts.TotalMilliseconds >= 1)
                 return PadLeft(ts.TotalMilliseconds.ToString(@"0.000\m\s\ "));
             return PadLeft((ts.TotalMilliseconds*1000.0).ToString(@"0.000\μ\s"));
