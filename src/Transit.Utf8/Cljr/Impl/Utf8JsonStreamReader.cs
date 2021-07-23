@@ -92,11 +92,26 @@ namespace Sellars.Transit.Impl
             // We do this before reading anything since a previous read may have brought in several tokens.
             cancellationToken.ThrowIfCancellationRequested();
 
-            var rollback = reader;
-            if (TryReadNextToken(ref reader, streamState))
-                return true;
+            var isFinalBlock = streamState == StreamState.EndOfStream;
+            if (forceNewReader || isFinalBlock)
+            {
+                forceNewReader = false;
+                reader = new Utf8JsonReader(RemainingBytes, isFinalBlock, reader.CurrentState);
+            }
 
-            reader = rollback;
+            try
+            {
+                if (reader.Read())
+                {
+                    endOfLastToken = reader.Position;
+                    return true;
+                }
+            }
+            catch (JsonException)
+            {
+                throw;
+            }
+
             return false;
         }
 
@@ -171,35 +186,6 @@ namespace Sellars.Transit.Impl
             }
         }
 
-        /// <summary>
-        /// Checks whether the content in <see cref="ReadData"/> include a complete Utf8Json structure.
-        /// </summary>
-        /// <param name="completeToken">Receives the sequence of the first complete data structure found, if any.</param>
-        /// <returns><c>true</c> if a complete data structure was found; <c>false</c> otherwise.</returns>
-        private bool TryReadNextToken(ref Utf8JsonReader reader, StreamState streamState)
-        {
-            var isFinalBlock = streamState == StreamState.EndOfStream;
-            if (forceNewReader || isFinalBlock)
-            {
-                forceNewReader = false;
-                reader = new Utf8JsonReader(RemainingBytes, isFinalBlock, reader.CurrentState);
-            }
-
-            try
-            {
-                if (reader.Read())
-                {
-                    endOfLastToken = reader.Position;
-                    return true;
-                }
-            }
-            catch (JsonException)
-            {
-                throw;
-            }
-
-            return false;
-        }
 
         public enum StreamState
         {
