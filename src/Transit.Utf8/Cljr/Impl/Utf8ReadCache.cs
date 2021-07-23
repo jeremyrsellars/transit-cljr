@@ -3,7 +3,8 @@ using System.Text.Json;
 
 namespace Sellars.Transit.Impl
 {
-    internal class Utf8ReadCache: ReadCache
+    using static Utf8ReadUtil;
+    internal class Utf8ReadCache : ReadCache
     {
         public object CacheReadParseString(ref Utf8JsonReader rdr, bool asDictionaryKey, Utf8JsonParser p)
         {
@@ -25,10 +26,10 @@ namespace Sellars.Transit.Impl
                 {
                     Init();
                 }
-                return cache[index++] = p.ParseString(p.ParseString(ref rdr, this)); // another implementation checked for null parser.
+                return cache[index++] = p.ParseString(ref rdr); // another implementation checked for null parser.
             }
 
-            return p.ParseString(p.ParseString(ref rdr, this)); // another implementation checked for null parser.
+            return p.ParseString(ref rdr); // another implementation checked for null parser.
         }
 
         private bool CacheCode(ref Utf8JsonReader rdr)
@@ -58,37 +59,6 @@ namespace Sellars.Transit.Impl
                 (asDictionaryKey ||
                     (Nth(ref rdr, 0) == Constants.Esc &&
                     ((b1 = (byte)Nth(ref rdr, 1)) == ':' || b1 == '$' || b1 == '#')));
-        }
-
-        public static bool IsValueEmpty(ref Utf8JsonReader rdr) =>
-            (!rdr.HasValueSequence && rdr.ValueSpan.IsEmpty)
-            || (rdr.HasValueSequence && rdr.ValueSequence.IsEmpty);
-
-        public static byte? Nth(ref Utf8JsonReader rdr, int valueIndex)
-        {
-            if (rdr.HasValueSequence)
-            {
-                var seq = rdr.ValueSequence;
-                var p = seq.GetPosition(valueIndex);
-                if (seq.TryGet(ref p, out var mem, false))
-                    return mem.Span[0];
-                return default;
-            }
-
-            var s = rdr.ValueSpan;
-            return valueIndex < s.Length ? s[valueIndex] : default;
-        }
-
-        public static bool ValueLengthAtLeast(ref Utf8JsonReader rdr, int minLen)
-        {
-            if (rdr.HasValueSequence)
-            {
-                var seq = rdr.ValueSequence;
-                return seq.First.Length >= minLen
-                    || seq.Length >= minLen;
-            }
-            else
-                return rdr.ValueSpan.Length >= minLen;
         }
     }
 }

@@ -25,7 +25,7 @@ namespace Beerendonk.Transit.Impl.ReadHandlers
     /// <summary>
     /// Represents a binary read handler.
     /// </summary>
-    internal class BinaryReadHandler : IReadHandler
+    internal partial class BinaryReadHandler : IReadHandler
     {
         /// <summary>
         /// Converts a transit value to a byte array.

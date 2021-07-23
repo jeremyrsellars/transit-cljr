@@ -45,7 +45,7 @@ namespace Beerendonk.Transit.Impl
         /// </summary>
         protected readonly IImmutableDictionary<string, IReadHandler> handlers;
 
-        private readonly IDefaultReadHandler<object> defaultHandler;
+        protected readonly IDefaultReadHandler<object> defaultHandler;
 
         /// <summary>
         /// The dictionary builder.

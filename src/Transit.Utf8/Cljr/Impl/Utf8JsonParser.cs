@@ -4,9 +4,7 @@ using Beerendonk.Transit.Impl;
 using System.Threading;
 using System;
 using System.Text.Json;
-using System.Buffers;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 
 namespace Sellars.Transit.Impl
 {
@@ -123,6 +121,12 @@ namespace Sellars.Transit.Impl
             return ParseInteger(ref rdr, cache);
         }
 
+        internal T AdvanceTokenAndReturn<T>(ref Utf8JsonReader rdr, T val)
+        {
+            ReadToken(ref rdr);
+            return val;
+        }
+
         internal void ReadToken(ref Utf8JsonReader rdr, bool allowTokenUnavailable = true, JsonTokenType? expectedCurrentTokenType = default)
         {
             if (rdr.CurrentDepth == 0 && rdr.TokenType != JsonTokenType.StartArray && rdr.TokenType != JsonTokenType.StartObject)
@@ -176,6 +180,66 @@ namespace Sellars.Transit.Impl
         private object CacheReadParseString(ref Utf8JsonReader rdr, ReadCache cache, bool asDictionaryKey)
         {
             return ((Utf8ReadCache)cache).CacheReadParseString(ref rdr, asDictionaryKey, this);
+        }
+
+        /// <summary>
+        /// Parses the non-cache-code string.
+        /// </summary>
+        /// <param name="obj">The object.</param>
+        /// <returns></returns>
+        protected internal object ParseString(ref Utf8JsonReader rdr)
+        {
+            if (Utf8ReadUtil.ValueLengthAtLeast(ref rdr, 2))
+            {
+                switch ((char)Utf8ReadUtil.Nth(ref rdr, 0))
+                {
+                    case Constants.Esc:
+                        switch ((char)Utf8ReadUtil.Nth(ref rdr, 1))
+                        {
+                            case Constants.Esc:
+                            case Constants.Sub:
+                            case Constants.Reserved:
+                                return AdvanceTokenAndReturn(ref rdr, Utf8ReadUtil.ReadSubstring(ref rdr, 1));
+                            case Constants.Tag:
+                                return AdvanceTokenAndReturn(ref rdr,
+                                    Utf8ReadUtil.TryReadTag(ref rdr, 2));
+                            default:
+                                {
+                                    Span<byte> tagBytes = stackalloc byte[1];
+                                    tagBytes[0] = Utf8ReadUtil.Nth(ref rdr, 1).Value;
+                                    var st = SpanTag.TryFromSpan(tagBytes);
+
+                                    string tag = st?.GetValue() ?? ((char)tagBytes[0]).ToString();
+                                    return AdvanceTokenAndReturn(ref rdr, Decode(tag, ref rdr, 2));
+                                }
+                        }
+                    case Constants.Sub:
+                        if (Utf8ReadUtil.Nth(ref rdr, 1) == ' ')
+                        {
+                            return AdvanceTokenAndReturn(ref rdr, Constants.DirectoryAsList);
+                        }
+                        break;
+                }
+            }
+            return ParseString(ref rdr, null);
+        }
+
+        private object Decode(string tag, ref Utf8JsonReader rdr, int startIndex)
+        {
+            if (TryGetHandler(tag, out var handler))
+            {
+                if (handler is IUtf8ByteReadHandler utf8Handler)
+                {
+                    return rdr.HasValueSequence
+                        ? utf8Handler.FromUtf8Representation(rdr.ValueSequence.Slice(startIndex))
+                        : utf8Handler.FromUtf8Representation(rdr.ValueSpan.Slice(startIndex));
+                }
+                return handler.FromRepresentation(Utf8ReadUtil.ReadSubstring(ref rdr, startIndex));
+            }
+            else if (defaultHandler is null)
+                throw new TransitException("Cannot FromRepresentation " + tag);
+
+            return defaultHandler.FromRepresentation(tag, Utf8ReadUtil.ReadSubstring(ref rdr, startIndex));
         }
 
         internal object ParseArray(ref Utf8JsonReader rdr, JsonReaderOptions options, bool asDictionaryKey, ReadCache cache, IListReadHandler handler)
