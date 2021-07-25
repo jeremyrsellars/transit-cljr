@@ -17,6 +17,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Text;
 using Sellars.Transit.Alpha;
 
@@ -55,6 +56,38 @@ namespace Beerendonk.Transit.Impl
 
 		    return sb.Append(prefix).Append(tag).Append(s).ToString();
 	    }
+
+        /// <summary>
+        /// Concatenates the arguments.  This should only be used for short strings.
+        /// </summary>
+        /// <param name="prefix"></param>
+        /// <param name="tag"></param>
+        /// <param name="s"></param>
+        /// <returns></returns>
+        internal static ReadOnlySpan<char> Prefix(ReadOnlySpan<char> prefix, ReadOnlySpan<char> tag, ReadOnlySpan<char> s, ref Span<char> result)
+        {
+            if (prefix.IsEmpty && tag.IsEmpty)
+                return s;
+
+            var length = prefix.Length + tag.Length + s.Length;
+            if (length > result.Length)
+                throw new ArgumentOutOfRangeException("Insufficient buffer");
+
+            var rest = result;
+            if (prefix.Length > 0)
+            {
+                prefix.CopyTo(rest);
+                rest = rest.Slice(prefix.Length);
+            }
+            if (tag.Length > 0)
+            {
+                tag.CopyTo(rest);
+                rest = rest.Slice(tag.Length);
+            }
+            s.CopyTo(rest);
+
+            return result.Slice(0, length);
+        }
 
         /*
 	    public static long arraySize(Object a) {

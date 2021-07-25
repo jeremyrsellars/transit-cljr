@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
 using System.Text.Json;
 using Beerendonk.Transit.Impl;
 using Sellars.Transit.Alpha;
@@ -15,17 +14,8 @@ namespace Sellars.Transit.Cljr.Impl
     {
         public Utf8JsonVerboseEmitter(Utf8JsonWriter jsonWriter, IImmutableDictionary<Type, IWriteHandler> handlers,
             IWriteHandler defaultHandler, Func<object, object> transform)
-            : base(jsonWriter, handlers, defaultHandler, transform)
+            : base(jsonWriter, handlers, defaultHandler, transform, dictionaryKeyAsPropertyName: true)
         {
-        }
-
-        public override void EmitString(string prefix, string tag, string s, bool asDictionaryKey, WriteCache cache)
-        {
-            string outString = cache.CacheWrite(Beerendonk.Transit.Impl.Util.MaybePrefix(prefix, tag, s), asDictionaryKey);
-            if (asDictionaryKey)
-                jsonWriter.WritePropertyName(outString);
-            else
-                jsonWriter.WriteStringValue(outString);
         }
 
         protected override void EmitTagged(string t, object obj, bool ignored, WriteCache cache)

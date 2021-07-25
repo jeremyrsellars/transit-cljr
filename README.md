@@ -103,6 +103,14 @@ The MIME type for Transit format data depends on the encoding scheme:
 JSON / JSON-Verbose|application/transit+json
 MessagePack|application/transit+msgpack
 
+# To-do:
+
+* [ ] Make sure that the read/write caching works the same as TransitJVM/Clojure
+    * [] Check that the cache is reset after every (t/write writer) and (t/read reader) as in transit-clj.
+* [ ] Compare performance with well-known Json libraries
+* [ ] Test Utf8 with Unicode chars.
+* [ ] Test nuget package
+
 ## Copyright and License
 
 Portions of this project are based on several projects licensed under the Apache License, Version 2.0.  No endorsement by the copyright holders is expressed or implied.

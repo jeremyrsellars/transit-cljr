@@ -17,12 +17,20 @@ namespace Sellars.Transit.Cljr.Impl
         private static readonly long JsonIntMin = -JsonIntMax;
 
         protected readonly Utf8JsonWriter jsonWriter;
+        protected readonly bool dictionaryKeyAsPropertyName;
 
         public Utf8JsonEmitter(Utf8JsonWriter jsonWriter, IImmutableDictionary<Type, IWriteHandler> handlers,
             IWriteHandler defaultHandler, Func<object, object> transform)
+            : this(jsonWriter, handlers, defaultHandler, transform, dictionaryKeyAsPropertyName: false)
+        {
+        }
+
+        protected Utf8JsonEmitter(Utf8JsonWriter jsonWriter, IImmutableDictionary<Type, IWriteHandler> handlers,
+            IWriteHandler defaultHandler, Func<object, object> transform, bool dictionaryKeyAsPropertyName)
             : base(handlers, defaultHandler, transform)
         {
             this.jsonWriter = jsonWriter;
+            this.dictionaryKeyAsPropertyName = dictionaryKeyAsPropertyName;
         }
 
         public override void Emit(object obj, bool asDictionaryKey, WriteCache cache)
@@ -35,7 +43,7 @@ namespace Sellars.Transit.Cljr.Impl
         {
             if (asDictionaryKey)
             {
-                EmitString(Constants.EscStr, "_", "", asDictionaryKey, cache);
+                EmitUncacheableStringOfLength3OrLess(Constants.EscStr, "_", "", asDictionaryKey);
             }
             else
             {
@@ -46,14 +54,33 @@ namespace Sellars.Transit.Cljr.Impl
         public override void EmitString(string prefix, string tag, string s, bool asDictionaryKey, WriteCache cache)
         {
             string outString = cache.CacheWrite(Beerendonk.Transit.Impl.Util.MaybePrefix(prefix, tag, s), asDictionaryKey);
-            jsonWriter.WriteStringValue(outString);
+            if (asDictionaryKey && dictionaryKeyAsPropertyName)
+                jsonWriter.WritePropertyName(outString);
+            else
+                jsonWriter.WriteStringValue(outString);
+        }
+
+        protected void EmitUncacheableStringOfLength3OrLess(string prefix, string tag, string s, bool asDictionaryKey, bool asPropertyName = false)
+        {
+#if NET461
+            string outString = Beerendonk.Transit.Impl.Util.MaybePrefix(prefix, tag, s);
+            if (outString.Length >= WriteCache.MinSizeCacheable)
+                throw new Exception("Attempt to UncachedWrite of Length >= MinSizeCacheable.");
+#else
+            Span<char> buffer = stackalloc char[WriteCache.MinSizeCacheable - 1];
+            var outString = Beerendonk.Transit.Impl.Util.Prefix(prefix, tag, s, ref buffer);
+#endif
+            if (asDictionaryKey && dictionaryKeyAsPropertyName)
+                jsonWriter.WritePropertyName(outString);
+            else
+                jsonWriter.WriteStringValue(outString);
         }
 
         public override void EmitBoolean(bool b, bool asDictionaryKey, WriteCache cache)
         {
             if (asDictionaryKey)
             {
-                EmitString(Constants.EscStr, "?", b ? "t" : "f", asDictionaryKey, cache);
+                EmitUncacheableStringOfLength3OrLess(Constants.EscStr, "?", b ? "t" : "f", asDictionaryKey);
             }
             else
             {
@@ -165,7 +192,7 @@ namespace Sellars.Transit.Cljr.Impl
             long sz = Enumerable.Count(keyValuePairs);
 
             EmitListStart(sz);
-            EmitString(null, null, Constants.DirectoryAsList, false, cache);
+            EmitUncacheableStringOfLength3OrLess(null, null, Constants.DirectoryAsList, false);
 
             foreach (var kvp in keyValuePairs)
             {

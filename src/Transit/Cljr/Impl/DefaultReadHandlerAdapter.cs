@@ -24,7 +24,9 @@ namespace Sellars.Transit.Cljr.Impl
             }
 
             public override object FromRepresentation(string tag, object representation) =>
-                customDefaultHandler.FromRepresentation(tag, representation);
+                customDefaultHandler == null
+                    ? new Beerendonk.Transit.Impl.TaggedValue(tag, representation)
+                    : customDefaultHandler.FromRepresentation(tag, representation);
         }
 
         public class TypedToUntyped : DefaultReadHandlerAdapter
@@ -37,7 +39,9 @@ namespace Sellars.Transit.Cljr.Impl
             }
 
             public override object FromRepresentation(string tag, object representation) =>
-                customDefaultHandler.FromRepresentation(tag, representation);
+                customDefaultHandler == null
+                    ? new Beerendonk.Transit.Impl.TaggedValue(tag, representation)
+                    : customDefaultHandler.FromRepresentation(tag, representation);
         }
     }
 }
