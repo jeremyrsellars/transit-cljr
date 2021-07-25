@@ -20,11 +20,11 @@ namespace TimeExecution
 
         const int bytesSize = 1024;
 #if DEBUG
-        const int iterations = 10000;
+        const int defIterations = 1000000;
 #else
-        const int iterations = 1000000;
+        const int defIterations = 1000000;
 #endif
-        private const int InitCapacity = iterations * (200 + bytesSize * 3 / 2); // bytes per iteration
+        private const int InitCapacity = defIterations * (200 + bytesSize * 3 / 2); // bytes per iteration
         static System.Diagnostics.Stopwatch stopwatch = System.Diagnostics.Stopwatch.StartNew();
         static int ctr;
         static TimeSpan prevReport = stopwatch.Elapsed;
@@ -60,10 +60,8 @@ namespace TimeExecution
                 s.Length >= minLength ? s : new string(' ', minLength - s.Length) + s;
         }
 
-        static void Main(string[] args)
+        private static (long Size, int Iterations, object Val, bool alsoJson) DefaultValEtc()
         {
-            Inc("Init: " + typeof(SUTTransitFactory));
-            using var stream = new MemoryStream(InitCapacity);
             var bytes = Enumerable.Range(0, bytesSize).Select(i => unchecked((byte)i)).ToArray();
             var val =
                 //new ArrayList
@@ -83,6 +81,14 @@ namespace TimeExecution
                 new MyNamedValue("An example", Math.PI, new MyVersion(1, 2, 3, 4), "I'm some meta", bytes)
                 ///new[] { new MyVersion(1, 2, 3, 4), new MyVersion(10, 2, 3, 4), new MyVersion(100, 2, 3, 4), new MyVersion(1000, 2, 3, 4) }
                 ;
+            return (bytesSize + 50, defIterations, val, true);
+        }
+
+        static void Main(string[] args)
+        {
+            Inc("Init: " + typeof(SUTTransitFactory));
+            var (size, iterations, val, alsoJson) = ReadValFromArgsOrDefault(args);
+            using var stream = new MemoryStream(InitCapacity);
 
             Inc();
             int? per = default;
@@ -99,7 +105,7 @@ namespace TimeExecution
                 stream.Position = 0;
                 stream.SetLength(stream.Position);
                 Inc(nameof(TestWrite1) + ":" + format, per: per); // wait to initialize `per` until we've done that many.
-                TestWrite1(format, stream, val);
+                TestWrite1(format, stream, val, iterations);
                 per = iterations;
 
                 MaybeBrotliEncodeDecode(stream, per);
@@ -113,7 +119,7 @@ namespace TimeExecution
                 stream.Position = 0;
                 stream.SetLength(stream.Position);
                 Inc(nameof(TestWriteMany) + ":" + format, per: per);
-                TestWriteMany(format, stream, new[] { val });
+                TestWriteMany(format, stream, new[] { val }, iterations);
                 per = iterations;
 
                 MaybeBrotliEncodeDecode(stream, per);
@@ -121,39 +127,68 @@ namespace TimeExecution
                 Inc(nameof(TestReadMany) + ":" + format + ":" + stream.Position, per: per);
                 stream.SetLength(stream.Position);
                 stream.Position = 0;
-                TestReadMany(format, stream);
+                TestReadMany(format, stream, iterations);
             }
 
             Inc("Done:" + stream.Position, per: per);
 
+            if(alsoJson)
+            {
+                stream.Position = 0;
+                Inc(nameof(TestJSWrite1) + ":" + "S.T.Json");
+                TestJSWrite1(stream, val, iterations);
 
-            stream.Position = 0;
-            Inc(nameof(TestJSWrite1) + ":" + "S.T.Json");
-            TestJSWrite1(stream, val);
+                MaybeBrotliEncodeDecode(stream, per);
 
-            MaybeBrotliEncodeDecode(stream, per);
+                Inc(nameof(TestJSRead1) + ":" + "S.T.Json" + ":" + stream.Position, per: per);
+                stream.SetLength(stream.Position);
+                stream.Position = 0;
+                TestJSRead1<MyNamedValue[]>(stream);
 
-            Inc(nameof(TestJSRead1) + ":" + "S.T.Json" + ":" + stream.Position, per: per);
-            stream.SetLength(stream.Position);
-            stream.Position = 0;
-            TestJSRead1<MyNamedValue[]>(stream);
+                stream.Position = 0;
+                Inc(nameof(TestJSWriteMany) + ":" + "S.T.Json", per: per);
+                TestJSWriteMany(stream, val, iterations);
 
-            stream.Position = 0;
-            Inc(nameof(TestJSWriteMany) + ":" + "S.T.Json", per: per);
-            TestJSWriteMany(stream, val);
+                MaybeBrotliEncodeDecode(stream, per);
 
-            MaybeBrotliEncodeDecode(stream, per);
+                Inc(nameof(TestJSReadMany) + ":" + "S.T.Json" + ":" + stream.Position, per: per);
+                stream.SetLength(stream.Position);
+                stream.Position = 0;
+                TestJSReadMany<MyNamedValue>(stream, iterations);
 
-            Inc(nameof(TestJSReadMany) + ":" + "S.T.Json" + ":" + stream.Position, per: per);
-            stream.SetLength(stream.Position);
-            stream.Position = 0;
-            TestJSReadMany<MyNamedValue>(stream);
-
-            Inc("Done:" + stream.Position, per: per);
+                Inc("Done:" + stream.Position, per: per);
+            }
 
             if (stream.Capacity > InitCapacity)
                 Console.Error.WriteLine($"The stream grew from {InitCapacity} to {stream.Capacity}");
         }
+
+        private static (long Size, int Iterations, object Val, bool alsoJson) ReadValFromArgsOrDefault(string[] args)
+        {
+            if (args.Length == 0)
+                return DefaultValEtc();
+
+            if (args.Length == 1)
+                return ReadValFromFile(args[0]);
+
+            return args.Select(ReadValFromFile).Aggregate(
+                (Size: 0L, Iterations:1, List: ImmutableList<object>.Empty, false),
+                (a, t) => (a.Size + t.Size, CalcIterations(a.Size + t.Size), a.List.Add(t.Val), false));
+        }
+
+        private static (long Size, int Iterations, object Val, bool alsoJson) ReadValFromFile(string filename)
+        {
+            var size = new FileInfo(filename).Length;
+            using var stream = File.OpenRead(filename);
+            return (
+                size,
+                CalcIterations(size),
+                TransitFactory.Reader(TransitFactory.Format.Json, stream).Read(),
+                false);
+        }
+
+        private static int CalcIterations(long size) =>
+            (int)Math.Ceiling(600000000.0 / size);
 
         private static void MaybeBrotliEncodeDecode(MemoryStream stream, int? per)
         {
@@ -186,7 +221,7 @@ namespace TimeExecution
             return s;
         }
 
-        static void TestWrite1<T>(TransitFactory.Format format, Stream stream, T val)
+        static void TestWrite1<T>(TransitFactory.Format format, Stream stream, T val, int iterations)
         {
             var writer = SUTTransitFactory.Writer<IEnumerable<T>>(format, stream, TransitWriters, null, null);
             writer.Write(Enumerable.Repeat(val, iterations));
@@ -198,21 +233,21 @@ namespace TimeExecution
             var x = writer.Read();
         }
 
-        static void TestWriteMany(TransitFactory.Format format, Stream stream, IList val)
+        static void TestWriteMany(TransitFactory.Format format, Stream stream, IList val, int iterations)
         {
             var writer = SUTTransitFactory.Writer<IList>(format, stream, TransitWriters, null, null);
             for (int ct = iterations; ct > 0; ct--)
                 writer.Write(val);
         }
 
-        static void TestReadMany(TransitFactory.Format format, Stream stream)
+        static void TestReadMany(TransitFactory.Format format, Stream stream, int iterations)
         {
             var writer = SUTTransitFactory.Reader(format, stream, TransitReaders, null);
             for (int ct = iterations; ct > 0; ct--)
                 writer.Read();
         }
 
-        static void TestJSWrite1<T>(MemoryStream stream, T val)
+        static void TestJSWrite1<T>(MemoryStream stream, T val, int iterations)
         {
             JsonSerializerOptions options = GetJsonSerializerOptions();
             JsonSerializer.Serialize(new Utf8JsonWriter(stream), Enumerable.Repeat(val, iterations), options);
@@ -224,7 +259,7 @@ namespace TimeExecution
             var x = JsonSerializer.DeserializeAsync<T>(stream, GetJsonSerializerOptions()).Result;
         }
 
-        static void TestJSWriteMany<T>(MemoryStream stream, T val)
+        static void TestJSWriteMany<T>(MemoryStream stream, T val, int iterations)
         {
             JsonSerializerOptions options = GetJsonSerializerOptions();
             for (int i = 0; i < iterations; i++)
@@ -234,7 +269,7 @@ namespace TimeExecution
             }
         }
 
-        static void TestJSReadMany<T>(MemoryStream stream)
+        static void TestJSReadMany<T>(MemoryStream stream, int iterations)
         {
             JsonSerializerOptions options = GetJsonSerializerOptions();
             for (int i = 0; i < iterations; i++)
