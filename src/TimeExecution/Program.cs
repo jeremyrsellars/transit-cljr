@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -15,9 +16,11 @@ namespace TimeExecution
     //using SUTTransitFactory = TransitFactory;
     class Program
     {
+        const bool skipBrotli = true;
+
         const int bytesSize = 1024;
 #if DEBUG
-        const int iterations = 1000000;
+        const int iterations = 10000;
 #else
         const int iterations = 1000000;
 #endif
@@ -27,8 +30,9 @@ namespace TimeExecution
         static TimeSpan prevReport = stopwatch.Elapsed;
         static string nextMessage;
 
-        static void Inc(string message = null, int? per = default)
+        static void Inc(string message = null, int? per = default, int forceGC = 2)
         {
+            GC.Collect(forceGC);
             var elapsed = stopwatch.Elapsed;
             Console.WriteLine(string.Join("\t", new string[] {
                 ctr++.ToString(),
@@ -98,6 +102,8 @@ namespace TimeExecution
                 TestWrite1(format, stream, val);
                 per = iterations;
 
+                MaybeBrotliEncodeDecode(stream, per);
+
                 Inc(nameof(TestRead1) + ":" + format + ":" + stream.Position, per: per);
                 stream.SetLength(stream.Position);
                 stream.Position = 0;
@@ -109,6 +115,8 @@ namespace TimeExecution
                 Inc(nameof(TestWriteMany) + ":" + format, per: per);
                 TestWriteMany(format, stream, new[] { val });
                 per = iterations;
+
+                MaybeBrotliEncodeDecode(stream, per);
 
                 Inc(nameof(TestReadMany) + ":" + format + ":" + stream.Position, per: per);
                 stream.SetLength(stream.Position);
@@ -123,6 +131,8 @@ namespace TimeExecution
             Inc(nameof(TestJSWrite1) + ":" + "S.T.Json");
             TestJSWrite1(stream, val);
 
+            MaybeBrotliEncodeDecode(stream, per);
+
             Inc(nameof(TestJSRead1) + ":" + "S.T.Json" + ":" + stream.Position, per: per);
             stream.SetLength(stream.Position);
             stream.Position = 0;
@@ -131,6 +141,8 @@ namespace TimeExecution
             stream.Position = 0;
             Inc(nameof(TestJSWriteMany) + ":" + "S.T.Json", per: per);
             TestJSWriteMany(stream, val);
+
+            MaybeBrotliEncodeDecode(stream, per);
 
             Inc(nameof(TestJSReadMany) + ":" + "S.T.Json" + ":" + stream.Position, per: per);
             stream.SetLength(stream.Position);
@@ -141,6 +153,37 @@ namespace TimeExecution
 
             if (stream.Capacity > InitCapacity)
                 Console.Error.WriteLine($"The stream grew from {InitCapacity} to {stream.Capacity}");
+        }
+
+        private static void MaybeBrotliEncodeDecode(MemoryStream stream, int? per)
+        {
+            if (skipBrotli) return;
+            const int HundredBaseTBytesSecond = 100 * 1024 * 1024 / 8;
+            var position = stream.Position;
+            var size = position;
+            stream.Position = 0;
+            using var intermediateEnc = new MemoryStream();
+            using var encStream = new BrotliStream(intermediateEnc, CompressionLevel.NoCompression, true);
+            stream.CopyTo(encStream);
+            encStream.Flush();
+            var compressedSize = intermediateEnc.Position;
+            System.Threading.Thread.Sleep((int)(intermediateEnc.Position / (HundredBaseTBytesSecond/1000L)));
+            intermediateEnc.Position = 0;
+            //using var intermediate = new MemoryStream();
+            using var decStream = new BrotliStream(intermediateEnc, CompressionMode.Decompress, true);
+            //stream.CopyTo(encStream);
+            var rdr = new StreamReader(decStream);
+            var content = rdr.ReadToEnd();
+            Inc($"Brotli encode({compressedSize}b)/decode({size})", per, forceGC: 0);
+            stream.Position = position;
+        }
+
+        static string PeekStream(MemoryStream stream)
+        {
+            var p = stream.Position;
+            var s = new StreamReader(stream).ReadToEnd();
+            stream.Position = p;
+            return s;
         }
 
         static void TestWrite1<T>(TransitFactory.Format format, Stream stream, T val)
