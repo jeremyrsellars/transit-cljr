@@ -91,6 +91,9 @@ namespace Sellars.Transit.Impl
 #else
                     Encoding.UTF8.GetString(valueSpan.ToArray());
 #endif
+#if NETSTANDARD2_1
+            Span<char> hexParse = stackalloc char[4];
+#endif
             s.Clear();
             s.EnsureCapacity(valueSpan.Length);
             for (var i = 0; i < valueSpan.Length; i++)
@@ -133,7 +136,6 @@ namespace Sellars.Transit.Impl
                             throw new Alpha.TransitException($"Unexpected JSON string escape sequence at {i} near end of string length {valueSpan.Length}");
 #if NETSTANDARD2_1
                         char uchar;
-                        Span<char> hexParse = stackalloc char[4];
                         hexParse[0] = (char)valueSpan[i++];
                         hexParse[1] = (char)valueSpan[i++];
                         hexParse[2] = (char)valueSpan[i++];
