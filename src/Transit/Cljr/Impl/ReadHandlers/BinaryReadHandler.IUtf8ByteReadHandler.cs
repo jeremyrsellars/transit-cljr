@@ -10,9 +10,9 @@ namespace Beerendonk.Transit.Impl.ReadHandlers
     /// <summary>
     /// Represents a binary read handler.
     /// </summary>
-    internal partial class BinaryReadHandler : IUtf8ByteReadHandler
+    internal partial class BinaryReadHandler : IUtf8ByteSequenceReadHandler, IUtf8ByteSpanReadHandler
     {
-        public object FromUtf8Representation(ReadOnlySequence<byte> utf8)
+        public bool TryFromUtf8Representation(ReadOnlySequence<byte> utf8, out object value)
         {
             var inputLength = checked((int)utf8.Length);
             // Calculating the true size of the destination array requires knowing how many padding chars ('=')
@@ -96,10 +96,11 @@ namespace Beerendonk.Transit.Impl.ReadHandlers
             if (result != OperationStatus.Done || overallBytesConsumed != utf8.Length)
                 throw new FormatException($"Could not decode binary data.  Status: {result}. Consumed {overallBytesConsumed}. Wrote {overallBytesWritten}.");
 
-            return TrimToSize(bytes, overallBytesWritten);
+            value = TrimToSize(bytes, overallBytesWritten);
+            return true;
         }
 
-        public object FromUtf8Representation(ReadOnlySpan<byte> utf8)
+        public bool TryFromUtf8Representation(ReadOnlySpan<byte> utf8, out object value)
         {
             var bytes = new byte[CalculateDecodedSize(utf8.Length, Padding(utf8))];
 
@@ -107,7 +108,8 @@ namespace Beerendonk.Transit.Impl.ReadHandlers
             if (result != OperationStatus.Done || bytesConsumed != utf8.Length)
                 throw new FormatException($"Could not decode binary data.  Status: {result}. Consumed {bytesConsumed}. Wrote {bytesWritten}.");
 
-            return TrimToSize(bytes, bytesWritten);
+            value = TrimToSize(bytes, bytesWritten);
+            return true;
         }
 
         private int Padding(ReadOnlySpan<byte> utf8)

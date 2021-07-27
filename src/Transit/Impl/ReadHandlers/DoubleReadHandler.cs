@@ -25,7 +25,7 @@ namespace Beerendonk.Transit.Impl.ReadHandlers
     /// <summary>
     /// Represents a <see cref="double"/> read handler.
     /// </summary>
-    internal class DoubleReadHandler : IReadHandler
+    internal partial class DoubleReadHandler : IReadHandler
     {
         /// <summary>
         /// Converts a transit value to a <see cref="double"/>.

@@ -230,11 +230,17 @@ namespace Sellars.Transit.Impl
         {
             if (TryGetHandler(tag, out var handler))
             {
-                if (handler is IUtf8ByteReadHandler utf8Handler)
+                if (rdr.HasValueSequence)
                 {
-                    return rdr.HasValueSequence
-                        ? utf8Handler.FromUtf8Representation(rdr.ValueSequence.Slice(startIndex))
-                        : utf8Handler.FromUtf8Representation(rdr.ValueSpan.Slice(startIndex));
+                    if (handler is IUtf8ByteSequenceReadHandler utf8SeqHandler
+                        && utf8SeqHandler.TryFromUtf8Representation(rdr.ValueSequence.Slice(startIndex), out var v1))
+                        return v1;
+                }
+                else
+                {
+                    if (handler is IUtf8ByteSpanReadHandler utf8SpanHandler
+                        && utf8SpanHandler.TryFromUtf8Representation(rdr.ValueSpan.Slice(startIndex), out var v2))
+                        return v2;
                 }
                 return handler.FromRepresentation(Utf8ReadUtil.ReadSubstring(ref rdr, startIndex));
             }
