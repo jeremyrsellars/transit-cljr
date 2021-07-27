@@ -26,7 +26,7 @@ namespace Beerendonk.Transit.Impl.ReadHandlers
     /// <summary>
     /// Represents a <see cref="DateTime"/> read handler.
     /// </summary>
-    internal class DateTimeReadHandler : IReadHandler
+    internal partial class DateTimeReadHandler : IReadHandler
     {
         /// <summary>
         /// Converts a transit value to a <see cref="DateTime"/>.

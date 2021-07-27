@@ -24,7 +24,7 @@ namespace Beerendonk.Transit.Impl.ReadHandlers
     /// <summary>
     /// Represents a <see cref="char"/> read handler.
     /// </summary>
-    internal class CharacterReadHandler : IReadHandler
+    internal partial class CharacterReadHandler : IReadHandler
     {
         /// <summary>
         /// Converts a transit value to a <see cref="char"/>.

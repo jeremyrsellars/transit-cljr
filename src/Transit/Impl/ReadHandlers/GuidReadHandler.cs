@@ -24,7 +24,7 @@ using Sellars.Transit.Alpha;
 
 namespace Beerendonk.Transit.Impl.ReadHandlers
 {
-    internal class GuidReadHandler : IReadHandler
+    internal partial class GuidReadHandler : IReadHandler
     {
         public object FromRepresentation(object representation)
         {

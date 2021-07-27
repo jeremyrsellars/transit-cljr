@@ -24,7 +24,7 @@ namespace Beerendonk.Transit.Impl.ReadHandlers
     /// <summary>
     /// Represents a <see cref="bool"/> read handler.
     /// </summary>
-    internal class BooleanReadHandler : IReadHandler
+    internal partial class BooleanReadHandler : IReadHandler
     {
         /// <summary>
         /// Converts a transit value to a <see cref="bool"/>.
