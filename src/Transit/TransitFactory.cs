@@ -194,25 +194,22 @@ namespace Sellars.Transit.Alpha
         /// <returns>A keyword.</returns>
         public static Keyword Keyword(object obj)
         {
-            if (obj is Keyword)
+            if (obj is Keyword kw)
+                return kw;
+            if (obj is Symbol sym)
+                return clojure.lang.Keyword.intern(sym);
+            if (obj is string)
             {
-                return (Keyword)obj;
+                string s = (string)obj;
+
+                if (s[0] == ':')
+                    return ParseKeyword(s.Substring(1));
+                else
+                    return ParseKeyword(s);
             }
             else
             {
-                if (obj is string)
-                {
-                    string s = (string)obj;
-
-                    if (s[0] == ':')
-                        return ParseKeyword(s.Substring(1));
-                    else
-                        return ParseKeyword(s);
-                }
-                else
-                {
-                    throw new TransitException("Cannot make keyword from " + obj.GetType().ToString());
-                }
+                throw new TransitException("Cannot make keyword from " + obj.GetType().ToString());
             }
         }
 

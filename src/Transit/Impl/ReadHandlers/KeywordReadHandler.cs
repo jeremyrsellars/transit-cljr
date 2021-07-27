@@ -21,11 +21,9 @@ using Sellars.Transit.Alpha;
 
 namespace Beerendonk.Transit.Impl.ReadHandlers
 {
-    internal class KeywordReadHandler : IReadHandler
+    internal partial class KeywordReadHandler : IReadHandler
     {
-        public object FromRepresentation(object representation)
-        {
-            return TransitFactory.Keyword((string)representation);
-        }
+        public object FromRepresentation(object representation) =>
+            TransitFactory.Keyword(SymbolReadHandler.ParseString((string)representation));
     }
 }

@@ -21,11 +21,12 @@ using Sellars.Transit.Alpha;
 
 namespace Beerendonk.Transit.Impl.ReadHandlers
 {
-    internal class SymbolReadHandler : IReadHandler
+    internal partial class SymbolReadHandler : IReadHandler
     {
-        public object FromRepresentation(object representation)
-        {
-            return TransitFactory.Symbol((string)representation);
-        }
+        public object FromRepresentation(object representation) =>
+            ParseString((string)representation);
+
+        public static object ParseString(string representation) =>
+            TransitFactory.Symbol(representation);
     }
 }
