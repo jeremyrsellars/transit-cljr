@@ -48,14 +48,27 @@ namespace Beerendonk.Transit.Tests
 
         public IReader Reader(string s)
         {
-            Stream input = new MemoryStream(Encoding.Default.GetBytes(s));
+            Stream input = new MemoryStream(adapter.Encoding.GetBytes(s));
             return adapter.CreateReader(TransitFactory.Format.Json, input);
         }
+
+        public IReader Reader(byte[] stringEncodedAsBytes)
+        {
+            Stream input = new MemoryStream(stringEncodedAsBytes);
+            return adapter.CreateReader(TransitFactory.Format.Json, input);
+        }
+
+        public string Transcode(string s) =>
+            adapter.Encoding.GetString(adapter.Encoding.GetBytes(s));
+
+        public char Transcode(char s) => 
+            Transcode(s.ToString())[0];
 
         [Test]
         public void TestReadString()
         {
             Assert.AreEqual("foo", Reader("\"foo\"").Read<string>());
+            Assert.AreEqual(Transcode("אЌ"), Reader("\"אЌ\"").Read<string>());  // Don't penalize implementation about characters that are unrepresentable in the current Encoding/codeset.
             Assert.AreEqual("~foo", Reader("\"~~foo\"").Read<string>());
             Assert.AreEqual("`foo", Reader("\"~`foo\"").Read<string>());
             Assert.AreEqual("foo", Reader("\"~#foo\"").Read<Tag>().GetValue());
@@ -87,11 +100,16 @@ namespace Beerendonk.Transit.Tests
             Keyword v = Reader("\"~:foo\"").Read<Keyword>();
             Assert.AreEqual(":foo", v.ToString());
 
-            IReader r = Reader("[\"~:foo\",\"^" + (char)WriteCache.BaseCharIdx + "\",\"^" + (char)WriteCache.BaseCharIdx + "\"]");
+            Keyword v1 = Reader("\"~:אЌ/foo\"").Read<Keyword>();
+            Assert.AreEqual(Transcode(":אЌ/foo"), v1.ToString());  // Don't penalize implementation about characters that are unrepresentable in the current Encoding/codeset.
+
+            IReader r = Reader("[\"~:foo\",\"^" + (char)WriteCache.BaseCharIdx + "\",\"^" + (char)WriteCache.BaseCharIdx + "\",\"~:אЌ/foo\",\"^" + ((char)(WriteCache.BaseCharIdx + 1)) + "\"]");
             var v2 = r.Read<IEnumerable>();
             Assert.AreEqual(":foo", RT.nth(v2, 0).ToString());
             Assert.AreEqual(":foo", RT.nth(v2, 1).ToString());
             Assert.AreEqual(":foo", RT.nth(v2, 2).ToString());
+            Assert.AreEqual(Transcode(":אЌ/foo"), RT.nth(v2, 3).ToString());
+            Assert.AreEqual(Transcode(":אЌ/foo"), RT.nth(v2, 4).ToString());
         }
 
         [Test]
@@ -173,6 +191,15 @@ namespace Beerendonk.Transit.Tests
             IReader r = Reader("\"~$foo\"");
             Symbol v = r.Read<Symbol>();
             Assert.AreEqual("foo", v.ToString());
+
+            Symbol v1 = Reader("\"~$אЌ/foo\"").Read<Symbol>();
+            Assert.AreEqual(Transcode("אЌ/foo"), v1.ToString());
+
+            IReader r2 = Reader("[\"~$foo\",\"^" + (char)WriteCache.BaseCharIdx + "\",\"^" + (char)WriteCache.BaseCharIdx + "\"]");
+            var v2 = r2.Read<IEnumerable>();
+            Assert.AreEqual("foo", RT.nth(v2, 0).ToString());
+            Assert.AreEqual("foo", RT.nth(v2, 1).ToString());
+            Assert.AreEqual("foo", RT.nth(v2, 2).ToString());
         }
 
         [Test]
@@ -181,6 +208,9 @@ namespace Beerendonk.Transit.Tests
             IReader r = Reader("\"~cf\"");
             char v = r.Read<char>();
             Assert.AreEqual('f', v);
+
+            Assert.AreEqual(Transcode('א'), Reader("\"~cא\"").Read<char>());  // Don't penalize implementation about characters that are unrepresentable in the current Encoding/codeset.
+            Assert.AreEqual(Transcode('Ќ'), Reader("\"~cЌ\"").Read<char>());  // Don't penalize implementation about characters that are unrepresentable in the current Encoding/codeset.
         }
 
         [Test]
@@ -521,6 +551,9 @@ namespace Beerendonk.Transit.Tests
             Assert.AreEqual(ScalarVerbose("\"~:foo\""), WriteJsonVerbose(TransitFactory.Keyword("foo")));
             Assert.AreEqual(Scalar("\"~:foo\""), WriteJson(TransitFactory.Keyword("foo")));
 
+            Assert.AreEqual(ScalarVerbose(Transcode("\"~:אЌ/foo\"")), WriteJsonVerbose(TransitFactory.Keyword("אЌ/foo")));
+            Assert.AreEqual(Transcode(Scalar("\"~:אЌ/foo\"")), WriteJson(TransitFactory.Keyword("אЌ/foo")));
+
             IList l = new Keyword[] 
             {
                 TransitFactory.Keyword("foo"),
@@ -548,8 +581,12 @@ namespace Beerendonk.Transit.Tests
         {
             Assert.AreEqual(ScalarVerbose("\"foo\""), WriteJsonVerbose("foo"));
             Assert.AreEqual(Scalar("\"foo\""), WriteJson("foo"));
-            Assert.AreEqual(ScalarVerbose("\"~~foo\""), WriteJsonVerbose("~foo"));
+            Assert.AreEqual(ScalarVerbose(Transcode("\"אЌfoo\"")), WriteJsonVerbose("אЌfoo"));
             Assert.AreEqual(Scalar("\"~~foo\""), WriteJson("~foo"));
+            Assert.AreEqual(ScalarVerbose(Transcode("\"א\"")), WriteJsonVerbose("א"));
+            Assert.AreEqual(Scalar(Transcode("\"א\"")), WriteJson("א"));
+            Assert.AreEqual(ScalarVerbose(Transcode("\"Ќ\"")), WriteJsonVerbose("Ќ"));
+            Assert.AreEqual(Scalar(Transcode("\"Ќ\"")), WriteJson("Ќ"));
         }
 
         [Test]
@@ -659,6 +696,9 @@ namespace Beerendonk.Transit.Tests
         public void TestWriteSymbol()
         {
             Assert.AreEqual(ScalarVerbose("\"~$foo\""), WriteJsonVerbose(TransitFactory.Symbol("foo")));
+            Assert.AreEqual(Scalar("\"~$foo\""), WriteJson(TransitFactory.Symbol("foo")));
+            Assert.AreEqual(ScalarVerbose(Transcode("\"~$אЌ/foo\"")), WriteJsonVerbose(TransitFactory.Symbol("אЌ/foo")));
+            Assert.AreEqual(Transcode(Scalar("\"~$אЌ/foo\"")), WriteJson(TransitFactory.Symbol("אЌ/foo")));
         }
 
         [Test]
@@ -707,6 +747,10 @@ namespace Beerendonk.Transit.Tests
 
             Assert.AreEqual("{\"foo\":1,\"bar\":2}", WriteJsonVerbose(d));
             Assert.AreEqual("[\"^ \",\"foo\",1,\"bar\",2]", WriteJson(d));
+
+            IDictionary<char, int> u = new Dictionary<char, int> { { 'א', 1 }, { 'Ќ', 2 } };
+            Assert.AreEqual(Transcode("{\"~cא\":1,\"~cЌ\":2}"), WriteJsonVerbose(u));
+            Assert.AreEqual(Transcode("[\"^ \",\"~cא\",1,\"~cЌ\",2]"), WriteJson(u));
         }
 
         [Test]
@@ -806,6 +850,8 @@ namespace Beerendonk.Transit.Tests
         public void TestWriteCharacter()
         {
             Assert.AreEqual(ScalarVerbose("\"~cf\""), WriteJsonVerbose('f'));
+            Assert.AreEqual(ScalarVerbose(Transcode("\"~cא\"")), WriteJsonVerbose('א'));
+            Assert.AreEqual(ScalarVerbose(Transcode("\"~cЌ\"")), WriteJsonVerbose('Ќ'));
         }
 
         [Test]
@@ -844,6 +890,10 @@ namespace Beerendonk.Transit.Tests
             Assert.AreEqual("abc", wc.CacheWrite("abc", false));
             Assert.AreEqual("abc", wc.CacheWrite("abc", true));
             Assert.AreEqual("abc", wc.CacheWrite("abc", true));
+            Assert.AreEqual("unicodeאЌ", wc.CacheWrite("unicodeאЌ", false));
+            Assert.AreEqual("unicodeאЌ", wc.CacheWrite("unicodeאЌ", false));
+            Assert.AreEqual("unicodeאЌ", wc.CacheWrite("unicodeאЌ", true));
+            Assert.AreEqual("^" + (char)(WriteCache.BaseCharIdx + 4), wc.CacheWrite("unicodeאЌ", true));
         }
 
         [Test]
@@ -868,6 +918,11 @@ namespace Beerendonk.Transit.Tests
             l2.Add(1L);
             l2.Add(2L);
             Assert.AreEqual("{\"~#point\":[1,2]}", WriteJsonVerbose(TransitFactory.TaggedValue("point", l2)));
+
+            var l3 = new List<object>();
+            l3.Add('א');
+            l3.Add('Ќ');
+            Assert.AreEqual(Transcode("{\"~#אЌ\":[\"~cא\",\"~cЌ\"]}"), WriteJsonVerbose(TransitFactory.TaggedValue("אЌ", l3)));
         }
 
         [Test]

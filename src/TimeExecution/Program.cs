@@ -84,6 +84,36 @@ namespace TimeExecution
             return (bytesSize + 50, defIterations, val, true);
         }
 
+        static void DoRune()
+        {
+            // As of this writing, there aren't currently any 4-UTF8-byte unicode characters
+            // that contain the UTF-8 '\\' character used to initiate a JSON string escape sequence.
+            // This seems like a good thing.
+
+            for (char c = (char)0; c < char.MaxValue; c++)
+            {
+                if (c == '\\')
+                    continue;
+                var bytes = System.Text.Encoding.UTF8.GetBytes(c.ToString());
+                for (int b = 0; b < bytes.Length; b++)
+                    if (bytes[b] == (byte)'\\')
+                        Console.WriteLine(c);
+            }
+            Span<byte> buff = stackalloc byte[4];
+            for (uint i = 0; i < uint.MaxValue; i++)
+            {
+                if (i == (uint)(byte)'\\')
+                    continue;
+                if (!System.Text.Rune.TryCreate(i, out var rune))
+                    continue;
+                if (!rune.TryEncodeToUtf8(buff, out var bytesWritten))
+                    continue;
+                for (int b = 0; b < 4; b++)
+                    if (buff[b] == (byte)'\\')
+                        Console.WriteLine(rune);
+            }
+        }
+
         static void Main(string[] args)
         {
             Inc("Init: " + typeof(SUTTransitFactory));
