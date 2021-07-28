@@ -94,6 +94,12 @@ Note: **This is a departure from Beerendonk's Transit-csharp library which conve
 
 Custom handlers may also be useful for other more verbose time representations, such as `System.DateTimeOffset` or Noda Time formats.  However, since these would potentially reduce the cross-platform usefulness of the library, they are not provided out of the box.
 
+## Encoding
+
+JSON Input and output streams are encoded as UTF8.
+
+Note: **This is a departure from Beerendonk's Transit-csharp library which used System.Text.Encoding.Default.**  When migrating from transit-csharp, or if your serialization and deserialization libraries are different, please ensure the times are communicated correctly in this regard.
+
 ## MIME Types
 
 The MIME type for Transit format data depends on the encoding scheme:
