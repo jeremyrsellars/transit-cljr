@@ -40,6 +40,11 @@ namespace Sellars.Transit.Cljr.Alpha
     /// </summary>
     public static class TransitFactory
     {
+        /// <summary>
+        /// The encoding of the JSON input & output streams.
+        /// </summary>
+        internal static System.Text.Encoding Encoding { get; set; } = System.Text.Encoding.Default;
+
         public static readonly WriterImplementation WriterFunc = Writer;
         public static readonly ReaderImplementation ReaderFunc = Reader;
 

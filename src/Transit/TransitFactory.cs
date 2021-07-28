@@ -35,6 +35,11 @@ namespace Sellars.Transit.Alpha
     public static class TransitFactory
     {
         /// <summary>
+        /// The encoding of the JSON input & output streams.
+        /// </summary>
+        internal static System.Text.Encoding Encoding { get; set; } = System.Text.Encoding.Default;
+
+        /// <summary>
         /// Transit formats.
         /// </summary>
         public enum Format 

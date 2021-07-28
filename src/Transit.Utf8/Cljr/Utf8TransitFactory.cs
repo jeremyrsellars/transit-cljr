@@ -10,6 +10,11 @@ namespace Sellars.Transit.Cljr.Alpha
 {
     public class Utf8TransitFactory
     {
+        /// <summary>
+        /// This implementation can only use UTF8.
+        /// </summary>
+        internal static System.Text.Encoding Encoding { get; set; } = System.Text.Encoding.UTF8;
+
         public static readonly TransitFactory.WriterImplementation WriterFunc = Writer;
         public static readonly TransitFactory.ReaderImplementation ReaderFunc = Reader;
 

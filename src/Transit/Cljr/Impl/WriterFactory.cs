@@ -121,7 +121,7 @@ namespace Sellars.Transit.Cljr.Impl
         public static IWriter<T> GetJsonInstance<T>(Stream output, IDictionary<Type, IWriteHandler> customHandlers, bool verboseMode,
             IWriteHandler defaultHandler, Func<object, object> transform)
         {
-            TextWriter textWriter = new StreamWriter(output);
+            TextWriter textWriter = new StreamWriter(output, TransitFactory.Encoding);
             JsonWriter jsonWriter = new JsonTextWriter(textWriter);
             IImmutableDictionary<Type, IWriteHandler> handlers = Handlers(customHandlers);
             JsonEmitter emitter;

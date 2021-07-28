@@ -11,6 +11,11 @@ namespace Sellars.Transit.Alpha
     public class Utf8TransitFactory
     {
         /// <summary>
+        /// This implementation can only use UTF8.
+        /// </summary>
+        internal static System.Text.Encoding Encoding { get; } = System.Text.Encoding.UTF8;
+
+        /// <summary>
         /// Creates a writer instance.
         /// </summary>
         /// <param name="type">The format to write in.</param>

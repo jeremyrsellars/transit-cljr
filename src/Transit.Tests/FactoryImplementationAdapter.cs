@@ -39,7 +39,7 @@ namespace Sellars.Transit.Tests
                 new FactoryImplementationAdapter
                 {
                     Name = typeof(Sellars.Transit.Alpha.TransitFactory).FullName,
-                    Encoding = System.Text.Encoding.Default, // historically, the only encoding supported by TransitFactory
+                    Encoding = Sellars.Transit.Alpha.TransitFactory.Encoding,
                     CreateReader = Sellars.Transit.Alpha.TransitFactory.Reader,
                     CreateWriter = Sellars.Transit.Alpha.TransitFactory.Writer<object>,
                     CreateCustomWriter = Sellars.Transit.Alpha.TransitFactory.Writer<object>,
@@ -61,7 +61,7 @@ namespace Sellars.Transit.Tests
                 new FactoryImplementationAdapter
                 {
                     Name = typeof(Sellars.Transit.Cljr.Alpha.TransitFactory).FullName,
-                    Encoding = System.Text.Encoding.Default, // historically, the only encoding supported by TransitFactory
+                    Encoding = Sellars.Transit.Cljr.Alpha.TransitFactory.Encoding,
                     CreateReader = Sellars.Transit.Cljr.Alpha.TransitFactory.Reader,
                     CreateWriter = Sellars.Transit.Cljr.Alpha.TransitFactory.TypedWriter<object>,
                     CreateCustomWriter = Sellars.Transit.Cljr.Alpha.TransitFactory.TypedWriter<object>,
@@ -84,7 +84,7 @@ namespace Sellars.Transit.Tests
                 new FactoryImplementationAdapter
                 {
                     Name = typeof(Sellars.Transit.Alpha.Utf8TransitFactory).FullName,
-                    Encoding = System.Text.Encoding.UTF8,
+                    Encoding = Sellars.Transit.Alpha.Utf8TransitFactory.Encoding,
                     CreateReader = Sellars.Transit.Alpha.Utf8TransitFactory.Reader,
                     CreateWriter = Sellars.Transit.Alpha.Utf8TransitFactory.Writer<object>,
                     CreateCustomWriter = Sellars.Transit.Alpha.Utf8TransitFactory.Writer<object>,
@@ -106,7 +106,7 @@ namespace Sellars.Transit.Tests
                 new FactoryImplementationAdapter
                 {
                     Name = typeof(Sellars.Transit.Cljr.Alpha.Utf8TransitFactory).FullName,
-                    Encoding = System.Text.Encoding.UTF8,
+                    Encoding = Sellars.Transit.Cljr.Alpha.Utf8TransitFactory.Encoding,
                     CreateReader = Sellars.Transit.Cljr.Alpha.Utf8TransitFactory.Reader,
                     CreateWriter = Sellars.Transit.Cljr.Alpha.Utf8TransitFactory.TypedWriter<object>,
                     CreateCustomWriter = Sellars.Transit.Cljr.Alpha.Utf8TransitFactory.TypedWriter<object>,
