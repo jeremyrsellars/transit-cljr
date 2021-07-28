@@ -17,7 +17,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Newtonsoft.Json;
 using System.Collections.Immutable;
 using System.IO;
 using Sellars.Transit.Alpha;
@@ -133,7 +132,7 @@ namespace Sellars.Transit.Cljr.Impl
             IImmutableDictionary<string, IReadHandler> customHandlers,
             IDefaultReadHandler<object> customDefaultHandler)
         {
-            return new JsonReader(input, Handlers(customHandlers), customDefaultHandler ?? DefaultDefaultHandler());
+            return new Utf8JsonReader(input, Handlers(customHandlers), customDefaultHandler ?? DefaultDefaultHandler(), default);
         }
 
         /// <summary>
@@ -245,25 +244,6 @@ namespace Sellars.Transit.Cljr.Impl
             }
 
             protected abstract IParser CreateParser();
-        }
-
-        private class JsonReader : Reader
-        {
-            public JsonReader(Stream input, IImmutableDictionary<string, IReadHandler> handlers, IDefaultReadHandler<object> defaultHandler)
-                : base(input, handlers, defaultHandler)
-            {
-            }
-
-            protected override IParser CreateParser()
-            {
-                var streamReader = new StreamReader(input);
-                var jsonTextReader = new JsonTextReader(streamReader)
-                {
-                    SupportMultipleContent = true,
-                };
-                return new JsonParser(jsonTextReader, handlers, defaultHandler, 
-                    dictionaryBuilder, listBuilder);
-            }
         }
     }
 }
