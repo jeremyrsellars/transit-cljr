@@ -5,6 +5,7 @@ using System.Threading;
 using System;
 using System.Text.Json;
 using System.Diagnostics;
+using Sellars.Transit.Impl.Alpha;
 
 namespace Sellars.Transit.Impl
 {
@@ -14,7 +15,7 @@ namespace Sellars.Transit.Impl
     [DebuggerDisplay("{this}[CurrentToken={{BytesAsString}}]")]
     internal class Utf8JsonParser : AbstractParser
     {
-        private readonly Utf8JsonStreamReader streamReader;
+        private readonly IUtf8JsonTokenReader streamReader;
         private readonly JsonReaderOptions options;
         private JsonReaderState? initialState;
 
@@ -35,9 +36,28 @@ namespace Sellars.Transit.Impl
             IDefaultReadHandler<object> defaultHandler,
             IDictionaryReader dictionaryBuilder,
             IListReader listBuilder)
+            : this(new Utf8JsonStreamReader(input), options, handlers, defaultHandler, dictionaryBuilder, listBuilder)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Utf8JsonParser"/> class.
+        /// </summary>
+        /// <param name="reader">The json text reader.</param>
+        /// <param name="handlers">The handlers.</param>
+        /// <param name="defaultHandler">The default handler.</param>
+        /// <param name="dictionaryBuilder">The dictionary builder.</param>
+        /// <param name="listBuilder">The list builder.</param>
+        public Utf8JsonParser(
+            IUtf8JsonTokenReader streamReader,
+            JsonReaderOptions options,
+            IImmutableDictionary<string, IReadHandler> handlers,
+            IDefaultReadHandler<object> defaultHandler,
+            IDictionaryReader dictionaryBuilder,
+            IListReader listBuilder)
             : base(handlers, defaultHandler, dictionaryBuilder, listBuilder)
         {
-            streamReader = new Utf8JsonStreamReader(input);
+            this.streamReader = streamReader;
             this.options = options;
         }
 
@@ -49,7 +69,7 @@ namespace Sellars.Transit.Impl
         public override object Parse(ReadCache cache)
         {
             Utf8JsonReader rdr;
-            Utf8JsonStreamReader.StreamState streamState;
+            StreamState streamState;
 
             if (initialState is JsonReaderState state)
                 streamReader.Continue(state, out rdr, out streamState); // Continue parsing stream.
@@ -90,9 +110,9 @@ namespace Sellars.Transit.Impl
                 // No more full tokens are available
                 if (streamReader.TryReadMoreDataAsync(CancellationToken).Result)
                     continue;  // More data was read, so TryRead again.
-                else if (streamState == Utf8JsonStreamReader.StreamState.InStream)
+                else if (streamState == StreamState.InStream)
                     // TryRead one last time (See if last token was incomplete JSON number)
-                    streamState = Utf8JsonStreamReader.StreamState.EndOfStream;
+                    streamState = StreamState.EndOfStream;
                 else
                     return null;  // There are no more bytes in stream or the ReadData buffer.
             }
@@ -134,7 +154,7 @@ namespace Sellars.Transit.Impl
 
             do
             {
-                if (streamReader.TryRead(ref rdr, Utf8JsonStreamReader.StreamState.InStream, CancellationToken))
+                if (streamReader.TryRead(ref rdr, StreamState.InStream, CancellationToken))
                     return;
             }
             while (streamReader.TryReadMoreDataAsync(CancellationToken).Result);
@@ -383,7 +403,7 @@ namespace Sellars.Transit.Impl
         public override object ParseVal(bool asDictionaryKey, ReadCache cache)
         {
             Utf8JsonReader rdr;
-            Utf8JsonStreamReader.StreamState streamState;
+            StreamState streamState;
 
             if (initialState is JsonReaderState state)
                 streamReader.Continue(state, out rdr, out streamState); // Continue parsing stream.
@@ -403,9 +423,9 @@ namespace Sellars.Transit.Impl
                 // No more full tokens are available
                 if (streamReader.TryReadMoreDataAsync(CancellationToken).Result)
                     continue;  // More data was read, so TryRead again.
-                else if (streamState == Utf8JsonStreamReader.StreamState.InStream)
+                else if (streamState == StreamState.InStream)
                     // TryRead one last time (See if last token was incomplete JSON number)
-                    streamState = Utf8JsonStreamReader.StreamState.EndOfStream;
+                    streamState = StreamState.EndOfStream;
                 else
                     return null;  // There are no more bytes in stream or the ReadData buffer.
             }

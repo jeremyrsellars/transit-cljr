@@ -33,5 +33,8 @@ namespace Sellars.Transit.Cljr.Impl
 
         internal static IReader GetMsgPackInstance(Stream input, IImmutableDictionary<string, IReadHandler> customHandlers, IDefaultReadHandler<object> defaultHandler) =>
             new MsgPackReader(input, customHandlers, defaultHandler ?? DefaultDefaultHandler(), default);
+
+        internal static IReader GetMsgPackInstance(byte[] input, IImmutableDictionary<string, IReadHandler> customHandlers, IDefaultReadHandler<object> defaultHandler) =>
+            GetMsgPackInstance(new MemoryStream(input), customHandlers, defaultHandler);
     }
 }

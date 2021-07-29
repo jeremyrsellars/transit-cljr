@@ -81,10 +81,26 @@ namespace Sellars.Transit.Cljr.Alpha
             switch (type)
             {
                 case Format.MsgPack:
-                    return ReaderFactory.GetMsgPackInstance(input, TransitFactory.ReadHandlerMap(customHandlers), customDefaultHandler);
+                    return Utf8ReaderFactory.GetMsgPackInstance(input, TransitFactory.ReadHandlerMap(customHandlers), customDefaultHandler);
                 case Format.Json:
                 case Format.JsonVerbose:
-                    return Utf8ReaderFactory.GetJsonInstance(input, TransitFactory.ReadHandlerMap(customHandlers), customDefaultHandler);
+                    return Utf8ReaderFactory.GetJsonInstance(new Transit.Impl.Alpha.Utf8JsonStreamReader(input), TransitFactory.ReadHandlerMap(customHandlers), customDefaultHandler);
+                default:
+                    throw new ArgumentException("Unknown Writer type: " + type.ToString());
+            }
+        }
+
+        public static IReader Reader(Format type, byte[] input,
+            object customHandlers,
+            IDefaultReadHandler customDefaultHandler)
+        {
+            switch (type)
+            {
+                case Format.MsgPack:
+                    return Utf8ReaderFactory.GetMsgPackInstance(input, TransitFactory.ReadHandlerMap(customHandlers), customDefaultHandler);
+                case Format.Json:
+                case Format.JsonVerbose:
+                    return Utf8ReaderFactory.GetJsonInstance(new Transit.Impl.Alpha.Utf8JsonArrayReader(input), TransitFactory.ReadHandlerMap(customHandlers), customDefaultHandler);
                 default:
                     throw new ArgumentException("Unknown Writer type: " + type.ToString());
             }

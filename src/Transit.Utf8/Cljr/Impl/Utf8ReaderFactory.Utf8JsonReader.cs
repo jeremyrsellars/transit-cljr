@@ -1,10 +1,10 @@
 ﻿namespace Sellars.Transit.Cljr.Impl
 {
     using System.Collections.Immutable;
-    using System.IO;
     using Sellars.Transit.Alpha;
     using Beerendonk.Transit.Impl;
     using Sellars.Transit.Impl;
+    using Sellars.Transit.Impl.Alpha;
     using System.Text.Json;
     /// <summary>
     /// Represents a reader factory.
@@ -13,7 +13,7 @@
     {
         private class Utf8JsonReader : Reader
         {
-            public Utf8JsonReader(Stream input, IImmutableDictionary<string, IReadHandler> handlers, IDefaultReadHandler<object> defaultHandler
+            public Utf8JsonReader(IUtf8JsonTokenReader input, IImmutableDictionary<string, IReadHandler> handlers, IDefaultReadHandler<object> defaultHandler
                 , JsonReaderOptions options)
                 : base(input, handlers, defaultHandler)
             {
@@ -35,8 +35,8 @@
 namespace Sellars.Transit.Impl
 {
     using System.Collections.Immutable;
-    using System.IO;
     using Sellars.Transit.Alpha;
+    using Sellars.Transit.Impl.Alpha;
     using System.Text.Json;
     using Beerendonk.Transit.Impl;
 
@@ -52,7 +52,7 @@ namespace Sellars.Transit.Impl
         /// <param name="customHandlers">The custom handlers.</param>
         /// <param name="customDefaultHandler">The custom default handler.</param>
         /// <returns>A reader.</returns>
-        public static IReader GetJsonInstance(Stream input,
+        public static IReader GetJsonInstance(IUtf8JsonTokenReader input,
             IImmutableDictionary<string, IReadHandler> customHandlers,
             IDefaultReadHandler customDefaultHandler)
         {
@@ -64,7 +64,7 @@ namespace Sellars.Transit.Impl
 
         private abstract class Reader : IReader, Sellars.Transit.Spi.Alpha.IReaderSpi
         {
-            protected Stream input;
+            protected IUtf8JsonTokenReader input;
             protected IImmutableDictionary<string, IReadHandler> handlers;
             protected IDefaultReadHandler<object> defaultHandler;
             protected IDictionaryReader dictionaryBuilder;
@@ -73,7 +73,7 @@ namespace Sellars.Transit.Impl
             private IParser p;
             private bool initialized;
 
-            public Reader(Stream input, IImmutableDictionary<string, IReadHandler> handlers, IDefaultReadHandler<object> defaultHandler)
+            public Reader(IUtf8JsonTokenReader input, IImmutableDictionary<string, IReadHandler> handlers, IDefaultReadHandler<object> defaultHandler)
             {
                 this.initialized = false;
                 this.input = input;
@@ -132,7 +132,7 @@ namespace Sellars.Transit.Impl
 
         private class Utf8JsonReader : Reader
         {
-            public Utf8JsonReader(Stream input, IImmutableDictionary<string, IReadHandler> handlers, IDefaultReadHandler<object> defaultHandler
+            public Utf8JsonReader(IUtf8JsonTokenReader input, IImmutableDictionary<string, IReadHandler> handlers, IDefaultReadHandler<object> defaultHandler
                 , JsonReaderOptions options)
                 : base(input, handlers, defaultHandler)
             {

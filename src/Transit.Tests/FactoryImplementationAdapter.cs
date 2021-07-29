@@ -124,7 +124,60 @@ namespace Sellars.Transit.Tests
                         typeof(clojure.lang.IPersistentVector),
                     },
                 },
+
+                // Utf8TransitFactory (System.Text.Json) for byte[]
+                new FactoryImplementationAdapter
+                {
+                    Name = typeof(Sellars.Transit.Alpha.Utf8TransitFactory).FullName + "_reading_bytes",
+                    Encoding = Sellars.Transit.Alpha.Utf8TransitFactory.Encoding,
+                    CreateReader = (fmt, stream) => Sellars.Transit.Alpha.Utf8TransitFactory.Reader(fmt, ExportStreamBytes(stream), null, null),
+                    CreateWriter = Sellars.Transit.Alpha.Utf8TransitFactory.Writer<object>,
+                    CreateCustomWriter = Sellars.Transit.Alpha.Utf8TransitFactory.Writer<object>,
+                    SerializeJson = SerializeSystemTextJson,
+                    SetTypeGuarantees = new []{
+                        typeof(System.Collections.IEnumerable),
+                        typeof(System.Collections.Generic.IEnumerable<object>),
+                        typeof(System.Collections.Generic.ISet<object>),
+                    },
+                    DictionaryTypeGuarantees = new []{
+                        typeof(System.Collections.IDictionary),
+                        typeof(System.Collections.Immutable.IImmutableDictionary<object, object>),
+                    },
+                    ListTypeGuarantees = new []{
+                        typeof(System.Collections.IList),
+                        typeof(System.Collections.Generic.IList<object>),
+                    },
+                },
+                new FactoryImplementationAdapter
+                {
+                    Name = typeof(Sellars.Transit.Cljr.Alpha.Utf8TransitFactory).FullName + "_reading_bytes",
+                    Encoding = Sellars.Transit.Cljr.Alpha.Utf8TransitFactory.Encoding,
+                    CreateReader = (fmt, stream) => Sellars.Transit.Cljr.Alpha.Utf8TransitFactory.Reader(fmt, ExportStreamBytes(stream), null, null),
+                    CreateWriter = Sellars.Transit.Cljr.Alpha.Utf8TransitFactory.TypedWriter<object>,
+                    CreateCustomWriter = Sellars.Transit.Cljr.Alpha.Utf8TransitFactory.TypedWriter<object>,
+                    SerializeJson = SerializeSystemTextJson,
+                    SetTypeGuarantees = new []{
+                        typeof(System.Collections.IEnumerable),
+                        typeof(clojure.lang.IPersistentSet),
+                    },
+                    DictionaryTypeGuarantees = new []{
+                        typeof(System.Collections.IDictionary),
+                        typeof(clojure.lang.IPersistentMap),
+                    },
+                    ListTypeGuarantees = new []{
+                        typeof(System.Collections.IList),
+                        typeof(clojure.lang.IPersistentVector),
+                    },
+                },
             };
+
+        private static byte[] ExportStreamBytes(Stream stream)
+        {
+            var bytes = new byte[stream.Length];
+            using (var temp = new MemoryStream(bytes))
+                stream.CopyTo(temp);
+            return bytes;
+        }
 
         private static string SerializeNewtonsoft(object value)
         {

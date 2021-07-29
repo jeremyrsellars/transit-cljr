@@ -151,6 +151,18 @@ namespace Sellars.Transit.Cljr.Impl
                 MessagePack.MessagePackSerializerOptions.Standard);
         }
 
+        /// <summary>
+        /// Gets the MessagePack instance.
+        /// </summary>
+        /// <param name="input">The input.</param>
+        /// <param name="customHandlers">The custom handlers.</param>
+        /// <param name="customDefaultHandler">The custom default handler.</param>
+        /// <returns>A reader.</returns>
+        public static IReader GetMsgPackInstance(byte[] input,
+            IImmutableDictionary<string, IReadHandler> customHandlers,
+            IDefaultReadHandler customDefaultHandler) =>
+            GetMsgPackInstance(new MemoryStream(input), customHandlers, customDefaultHandler);
+
         private class DefaultReadHandler : IDefaultReadHandler<ITaggedValue>, IDefaultReadHandler
         {
             public ITaggedValue FromRepresentation(string tag, object representation)

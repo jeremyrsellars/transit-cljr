@@ -128,7 +128,7 @@ namespace Sellars.Transit.Cljr.Impl
         /// <param name="customHandlers">The custom handlers.</param>
         /// <param name="customDefaultHandler">The custom default handler.</param>
         /// <returns>A reader.</returns>
-        public static IReader GetJsonInstance(Stream input,
+        public static IReader GetJsonInstance(Transit.Impl.Alpha.IUtf8JsonTokenReader input,
             IImmutableDictionary<string, IReadHandler> customHandlers,
             IDefaultReadHandler<object> customDefaultHandler)
         {
@@ -142,7 +142,7 @@ namespace Sellars.Transit.Cljr.Impl
         /// <param name="customHandlers">The custom handlers.</param>
         /// <param name="customDefaultHandler">The custom default handler.</param>
         /// <returns>A reader.</returns>
-        public static IReader GetJsonInstance(Stream input,
+        public static IReader GetJsonInstance(Transit.Impl.Alpha.IUtf8JsonTokenReader input,
             IImmutableDictionary<string, IReadHandler> customHandlers,
             IDefaultReadHandler customDefaultHandler)
         {
@@ -164,6 +164,19 @@ namespace Sellars.Transit.Cljr.Impl
             //return new MsgPackReader(input, Handlers(customHandlers), TypedDefaultHandler(customDefaultHandler) ?? DefaultDefaultHandler(),
             //    MessagePack.MessagePackSerializerOptions.Standard);
         }
+        /// <summary>
+        /// Gets the MessagePack instance.
+        /// </summary>
+        /// <param name="input">The input.</param>
+        /// <param name="customHandlers">The custom handlers.</param>
+        /// <param name="customDefaultHandler">The custom default handler.</param>
+        /// <returns>A reader.</returns>
+        public static IReader GetMsgPackInstance(byte[] input,
+            IImmutableDictionary<string, IReadHandler> customHandlers,
+            IDefaultReadHandler customDefaultHandler)
+        {
+            return ReaderFactory.GetMsgPackInstance(input, customHandlers, customDefaultHandler);
+        }
 
         private class DefaultReadHandler : IDefaultReadHandler<ITaggedValue>, IDefaultReadHandler
         {
@@ -178,7 +191,7 @@ namespace Sellars.Transit.Cljr.Impl
 
         private abstract class Reader : IReader, IReaderSpi
         {
-            protected Stream input;
+            protected Transit.Impl.Alpha.IUtf8JsonTokenReader input;
             protected IImmutableDictionary<string, IReadHandler> handlers;
             protected IDefaultReadHandler<object> defaultHandler;
             protected IDictionaryReader dictionaryBuilder;
@@ -187,7 +200,7 @@ namespace Sellars.Transit.Cljr.Impl
             private IParser p;
             private bool initialized;
 
-            public Reader(Stream input, IImmutableDictionary<string, IReadHandler> handlers, IDefaultReadHandler<object> defaultHandler)
+            public Reader(Transit.Impl.Alpha.IUtf8JsonTokenReader input, IImmutableDictionary<string, IReadHandler> handlers, IDefaultReadHandler<object> defaultHandler)
             {
                 this.initialized = false;
                 this.input = input;

@@ -4,6 +4,7 @@ using System.IO;
 using Beerendonk.Transit.Impl;
 using Sellars.Transit.Cljr.Alpha;
 using Sellars.Transit.Impl;
+using Sellars.Transit.Impl.Alpha;
 using Format = Sellars.Transit.Alpha.TransitFactory.Format;
 
 namespace Sellars.Transit.Alpha
@@ -60,7 +61,7 @@ namespace Sellars.Transit.Alpha
                     return ReaderFactory.GetMsgPackInstance(input, default, default);
                 case Format.Json:
                 case Format.JsonVerbose:
-                    return Utf8ReaderFactory.GetJsonInstance(input, default, default);
+                    return Utf8ReaderFactory.GetJsonInstance(new Utf8JsonStreamReader(input), default, default);
                 default:
                     throw new ArgumentException("Unknown Writer type: " + type.ToString());
             }
@@ -76,7 +77,23 @@ namespace Sellars.Transit.Alpha
                     return ReaderFactory.GetMsgPackInstance(input, customHandlers, customDefaultHandler);
                 case Format.Json:
                 case Format.JsonVerbose:
-                    return Utf8ReaderFactory.GetJsonInstance(input, customHandlers, Cljr.Impl.DefaultReadHandlerAdapter.Adapt(customDefaultHandler));
+                    return Utf8ReaderFactory.GetJsonInstance(new Utf8JsonStreamReader(input), customHandlers, Cljr.Impl.DefaultReadHandlerAdapter.Adapt(customDefaultHandler));
+                default:
+                    throw new ArgumentException("Unknown Writer type: " + type.ToString());
+            }
+        }
+
+        public static IReader Reader(Format type, byte[] input,
+            System.Collections.Immutable.IImmutableDictionary<string, IReadHandler> customHandlers,
+            IDefaultReadHandler<object> customDefaultHandler)
+        {
+            switch (type)
+            {
+                case Format.MsgPack:
+                    return ReaderFactory.GetMsgPackInstance(input, customHandlers, customDefaultHandler);
+                case Format.Json:
+                case Format.JsonVerbose:
+                    return Utf8ReaderFactory.GetJsonInstance(new Utf8JsonArrayReader(input), customHandlers, Cljr.Impl.DefaultReadHandlerAdapter.Adapt(customDefaultHandler));
                 default:
                     throw new ArgumentException("Unknown Writer type: " + type.ToString());
             }

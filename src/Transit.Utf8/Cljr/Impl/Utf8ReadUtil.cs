@@ -133,7 +133,8 @@ namespace Sellars.Transit.Impl
                         break;
                     case 'u': //followed by four-hex-digits
                         if (valueSpan.Length < ++i + 4)
-                            throw new Alpha.TransitException($"Unexpected JSON string escape sequence at {i} near end of string length {valueSpan.Length}");
+                            throw new Transit.Alpha.TransitException(
+                                $"Unexpected JSON string escape sequence at {i} near end of string length {valueSpan.Length}");
 #if NETSTANDARD2_1
                         char uchar;
                         hexParse[0] = (char)valueSpan[i++];
@@ -147,7 +148,8 @@ namespace Sellars.Transit.Impl
                         s.Append(uchar);
                         break;
                     default:
-                        throw new Alpha.TransitException($"Unexpected JSON string escape sequence: \\{e}");
+                        throw new Transit.Alpha.TransitException(
+                            $"Unexpected JSON string escape sequence: \\{e}");
                 }
             }
             return s.ToString();

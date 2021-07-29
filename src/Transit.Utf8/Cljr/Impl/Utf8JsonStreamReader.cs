@@ -7,7 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Nerdbank.Streams;
 
-namespace Sellars.Transit.Impl
+namespace Sellars.Transit.Impl.Alpha
 {
     /// <summary>
     /// Reads one or more Utf8Json data structures from a <see cref="Stream"/>.
@@ -16,7 +16,7 @@ namespace Sellars.Transit.Impl
     /// This class is *not* thread-safe. Do not call more than one member at once and be sure any call completes (including asynchronous tasks)
     /// before calling the next one.
     /// </remarks>
-    public partial class Utf8JsonStreamReader : IDisposable
+    public partial class Utf8JsonStreamReader : IUtf8JsonTokenReader
     {
         private readonly Stream stream;
         private readonly bool leaveOpen;
@@ -57,7 +57,7 @@ namespace Sellars.Transit.Impl
         /// </summary>
         private Sequence<byte> ReadData => this.sequenceRental.Value;
 
-
+        /// <inheritdoc/>
         public void Init(JsonReaderOptions options, out Utf8JsonReader reader, out StreamState streamState)
         {
             reader = new Utf8JsonReader(ReadOnlySpan<byte>.Empty, options);
@@ -65,25 +65,14 @@ namespace Sellars.Transit.Impl
             streamState = StreamState.InStream;
         }
 
+        /// <inheritdoc/>
         public void Continue(JsonReaderState state, out Utf8JsonReader reader, out StreamState streamState)
         {
             reader = new Utf8JsonReader(RemainingBytes, false, state);
             streamState = StreamState.InStream;
         }
 
-        /// <summary>
-        /// Reads the next Utf8Json token.
-        /// </summary>
-        /// <param name="cancellationToken">A cancellation token.</param>
-        /// <returns>
-        /// A task whose result is the next token from the stream, or <c>null</c> if the stream ends.
-        /// The returned sequence is valid until this <see cref="Utf8JsonStreamReader"/> is disposed or
-        /// until this method is called again, whichever comes first.
-        /// </returns>
-        /// <remarks>
-        /// When <c>null</c> is the result of the returned task,
-        /// any extra bytes read (between the last complete token and the end of the stream) will be available via the <see cref="RemainingBytes"/> property.
-        /// </remarks>
+        /// <inheritdoc/>
         public bool TryRead(ref Utf8JsonReader reader, StreamState streamState, CancellationToken cancellationToken)
         {
             this.RecycleLastToken();
@@ -184,15 +173,6 @@ namespace Sellars.Transit.Impl
                 // Keep our state clean in case the caller wants to call us again.
                 this.ReadData.Advance(bytesRead);
             }
-        }
-
-
-        public enum StreamState
-        {
-            /// <summary>Start of stream, middle of stream, or end of stream that hasn't been detected yet.</summary>
-            InStream,
-            /// <summary>The stream has reported that it has no more bytes.</summary>
-            EndOfStream,
         }
     }
 }
