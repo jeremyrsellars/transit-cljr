@@ -39,27 +39,33 @@ namespace Sellars.Transit.Cljr.Impl
         /// wraps output with <c>StreamBufferWriter</c>.
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        /// <param name="output"></param>
+        /// <param name="streamOrBufferWriter">An instance of <see cref="IBufferWriter{byte}"/> or <see cref="Stream"/></param>
         /// <param name="customHandlers"></param>
         /// <returns></returns>
-        internal static IWriter<T> GetMsgPackInstance<T>(Stream output, IDictionary<Type, IWriteHandler> customHandlers,
+        internal static IWriter<T> GetMsgPackInstance<T>(object streamOrBufferWriter, IDictionary<Type, IWriteHandler> customHandlers,
             IWriteHandler defaultHandler, Func<object, object> transform)
         {
             IImmutableDictionary<Type, IWriteHandler> handlers = Handlers(customHandlers);
             IBufferWriter<byte> bufferWriter;
             Action flush;
 
-            if (output is IBufferWriter<byte> bw)
+            if (streamOrBufferWriter is IBufferWriter<byte> bw)
             {
                 bufferWriter = bw;
-                flush = output.Flush;
+                flush = bw is Stream s ? s.Flush
+                    : bw is System.IO.Pipelines.PipeWriter pw ? () => { var r = pw.FlushAsync().Result; }
+                    : default(Action);
             }
-            else
+            else if (streamOrBufferWriter is Stream output)
             {
                 var streamBufferWriter = new StreamBufferWriter(output);
                 bufferWriter = streamBufferWriter;
                 flush = streamBufferWriter.Flush;
             }
+            else
+                throw new ArgumentException(
+                    $"Expected Stream or IBufferWriter<byte>.  Found {streamOrBufferWriter}", 
+                    nameof(streamOrBufferWriter));
 
             var emitter = new MessagePackEmitter(bufferWriter, flush, handlers,
                 defaultHandler, transform);
@@ -67,7 +73,7 @@ namespace Sellars.Transit.Cljr.Impl
             SetSubHandler(handlers, emitter);
             WriteCache wc = new WriteCache();
 
-            return new MsgPackWriter<T>(output, emitter, wc);
+            return new MsgPackWriter<T>(streamOrBufferWriter as Stream, emitter, wc);
         }
 
         private class MsgPackWriter<T> : IWriter<T>
@@ -86,7 +92,7 @@ namespace Sellars.Transit.Cljr.Impl
             public void Write(T value)
             {
                 emitter.Emit(value, false, wc.Init());
-                output.Flush();
+                output?.Flush();
             }
         }
     }

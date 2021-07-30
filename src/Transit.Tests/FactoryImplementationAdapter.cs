@@ -14,6 +14,7 @@
 
 using System;
 using System.IO;
+using System.IO.Pipelines;
 using Sellars.Transit.Alpha;
 
 namespace Sellars.Transit.Tests
@@ -154,6 +155,51 @@ namespace Sellars.Transit.Tests
                     Encoding = Sellars.Transit.Cljr.Alpha.Utf8TransitFactory.Encoding,
                     CreateReader = (fmt, stream) => Sellars.Transit.Cljr.Alpha.Utf8TransitFactory.Reader(fmt, ExportStreamBytes(stream), null, null),
                     CreateWriter = Sellars.Transit.Cljr.Alpha.Utf8TransitFactory.TypedWriter<object>,
+                    CreateCustomWriter = Sellars.Transit.Cljr.Alpha.Utf8TransitFactory.TypedWriter<object>,
+                    SerializeJson = SerializeSystemTextJson,
+                    SetTypeGuarantees = new []{
+                        typeof(System.Collections.IEnumerable),
+                        typeof(clojure.lang.IPersistentSet),
+                    },
+                    DictionaryTypeGuarantees = new []{
+                        typeof(System.Collections.IDictionary),
+                        typeof(clojure.lang.IPersistentMap),
+                    },
+                    ListTypeGuarantees = new []{
+                        typeof(System.Collections.IList),
+                        typeof(clojure.lang.IPersistentVector),
+                    },
+                },
+
+                // Utf8TransitFactory (System.Text.Json) for Pipes
+                new FactoryImplementationAdapter
+                {
+                    Name = typeof(Sellars.Transit.Alpha.Utf8TransitFactory).FullName + "_pipes",
+                    Encoding = Sellars.Transit.Alpha.Utf8TransitFactory.Encoding,
+                    CreateReader = (fmt, stream) => Sellars.Transit.Alpha.Utf8TransitFactory.Reader(fmt, PipeReader.Create(stream), null, null),
+                    CreateWriter = (fmt, stream) => Sellars.Transit.Alpha.Utf8TransitFactory.Writer<object>(fmt, PipeWriter.Create(stream)),
+                    CreateCustomWriter = Sellars.Transit.Alpha.Utf8TransitFactory.Writer<object>,
+                    SerializeJson = SerializeSystemTextJson,
+                    SetTypeGuarantees = new []{
+                        typeof(System.Collections.IEnumerable),
+                        typeof(System.Collections.Generic.IEnumerable<object>),
+                        typeof(System.Collections.Generic.ISet<object>),
+                    },
+                    DictionaryTypeGuarantees = new []{
+                        typeof(System.Collections.IDictionary),
+                        typeof(System.Collections.Immutable.IImmutableDictionary<object, object>),
+                    },
+                    ListTypeGuarantees = new []{
+                        typeof(System.Collections.IList),
+                        typeof(System.Collections.Generic.IList<object>),
+                    },
+                },
+                new FactoryImplementationAdapter
+                {
+                    Name = typeof(Sellars.Transit.Cljr.Alpha.Utf8TransitFactory).FullName + "_pipes",
+                    Encoding = Sellars.Transit.Cljr.Alpha.Utf8TransitFactory.Encoding,
+                    CreateReader = (fmt, stream) => Sellars.Transit.Cljr.Alpha.Utf8TransitFactory.Reader(fmt, PipeReader.Create(stream), null, null),
+                    CreateWriter = (fmt, stream) => Sellars.Transit.Cljr.Alpha.Utf8TransitFactory.TypedWriter<object>(fmt, PipeWriter.Create(stream)),
                     CreateCustomWriter = Sellars.Transit.Cljr.Alpha.Utf8TransitFactory.TypedWriter<object>,
                     SerializeJson = SerializeSystemTextJson,
                     SetTypeGuarantees = new []{

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using Sellars.Transit.Alpha;
@@ -32,7 +33,25 @@ namespace Sellars.Transit.Cljr.Alpha
             return TypedWriter<T>(type, output, null);
         }
 
+        /// <summary>
+        /// Creates a writer instance.
+        /// </summary>
+        /// <param name="type">The format to write in.</param>
+        /// <param name="output">The output stream to write to.</param>
+        /// <returns>A writer.</returns>
+        public static IWriter<T> TypedWriter<T>(Format type, System.IO.Pipelines.PipeWriter output)
+        {
+            return TypedWriter<T>(type, output, null);
+        }
+
         public static IWriter Writer(Format type, Stream output, object customHandlers,
+            IWriteHandler defaultHandler = null, Func<object, object> transform = null) =>
+            new TypedWriterWrapper<object>(TypedWriter<object>(type, output,
+                WriteHandlers(customHandlers),
+                defaultHandler,
+                transform));
+
+        public static IWriter Writer(Format type, System.IO.Pipelines.PipeWriter output, object customHandlers,
             IWriteHandler defaultHandler = null, Func<object, object> transform = null) =>
             new TypedWriterWrapper<object>(TypedWriter<object>(type, output,
                 WriteHandlers(customHandlers),
@@ -53,6 +72,35 @@ namespace Sellars.Transit.Cljr.Alpha
         /// <exception cref="System.NotImplementedException"></exception>
         /// <exception cref="System.ArgumentException">Unknown Writer type:  + type.ToString()</exception>
         public static IWriter<T> TypedWriter<T>(Format type, Stream output, IDictionary<Type, IWriteHandler> customHandlers,
+            IWriteHandler defaultHandler = null, Func<object, object> transform = null)
+        {
+            switch (type)
+            {
+                case Format.MsgPack:
+                    return WriterFactory.GetMsgPackInstance<T>(output, customHandlers,
+                        defaultHandler, transform);
+                case Format.Json:
+                    return Utf8WriterFactory.GetJsonInstance<T>(output, customHandlers, false,
+                        defaultHandler, transform);
+                case Format.JsonVerbose:
+                    return Utf8WriterFactory.GetJsonInstance<T>(output, customHandlers, true,
+                        defaultHandler, transform);
+                default:
+                    throw new ArgumentException("Unknown Writer type: " + type.ToString());
+            }
+        }
+
+        /// <summary>
+        /// Creates a writer instance.
+        /// </summary>
+        /// <param name="type">The format to write in.</param>
+        /// <param name="output">The output stream to write to.</param>
+        /// <param name="customHandlers">Additional IWriteHandlers to use in addition 
+        /// to or in place of the default IWriteHandlers.</param>
+        /// <returns>A writer</returns>
+        /// <exception cref="System.NotImplementedException"></exception>
+        /// <exception cref="System.ArgumentException">Unknown Writer type:  + type.ToString()</exception>
+        public static IWriter<T> TypedWriter<T>(Format type, System.IO.Pipelines.PipeWriter output, IDictionary<Type, IWriteHandler> customHandlers,
             IWriteHandler defaultHandler = null, Func<object, object> transform = null)
         {
             switch (type)
@@ -101,6 +149,22 @@ namespace Sellars.Transit.Cljr.Alpha
                 case Format.Json:
                 case Format.JsonVerbose:
                     return Utf8ReaderFactory.GetJsonInstance(new Transit.Impl.Alpha.Utf8JsonArrayReader(input), TransitFactory.ReadHandlerMap(customHandlers), customDefaultHandler);
+                default:
+                    throw new ArgumentException("Unknown Writer type: " + type.ToString());
+            }
+        }
+
+        public static IReader Reader(Format type, System.IO.Pipelines.PipeReader input,
+            System.Collections.Immutable.IImmutableDictionary<string, IReadHandler> customHandlers,
+            IDefaultReadHandler customDefaultHandler)
+        {
+            switch (type)
+            {
+                case Format.MsgPack:
+                    return Utf8ReaderFactory.GetMsgPackInstance(input.AsStream(), TransitFactory.ReadHandlerMap(customHandlers), customDefaultHandler);
+                case Format.Json:
+                case Format.JsonVerbose:
+                    return Utf8ReaderFactory.GetJsonInstance(new Transit.Impl.Alpha.Utf8JsonPipeReader(input), customHandlers, Cljr.Impl.DefaultReadHandlerAdapter.Adapt(customDefaultHandler));
                 default:
                     throw new ArgumentException("Unknown Writer type: " + type.ToString());
             }

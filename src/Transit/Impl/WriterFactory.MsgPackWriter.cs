@@ -18,6 +18,7 @@
 // limitations under the License.
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
@@ -31,18 +32,38 @@ namespace Beerendonk.Transit.Impl
     /// </summary>
     internal partial class WriterFactory
     {
-        public static IWriter<T> GetMsgPackInstance<T>(Stream output, IDictionary<Type, IWriteHandler> customHandlers,
+        public static IWriter<T> GetMsgPackInstance<T>(object streamOrBufferWriter, IDictionary<Type, IWriteHandler> customHandlers,
             IWriteHandler defaultHandler, Func<object, object> transform)
         {
             IImmutableDictionary<Type, IWriteHandler> handlers = Handlers(customHandlers);
+            IBufferWriter<byte> bufferWriter;
+            Action flush;
 
-            var bufferWriter = new StreamBufferWriter(output);
-            var emitter = new MessagePackEmitter(bufferWriter, bufferWriter.Flush, handlers, defaultHandler, transform);
+            if (streamOrBufferWriter is IBufferWriter<byte> bw)
+            {
+                bufferWriter = bw;
+                flush = bw is Stream s ? s.Flush
+                    : bw is System.IO.Pipelines.PipeWriter pw ? () => { var r = pw.FlushAsync().Result; }
+                    : default(Action);
+            }
+            else if (streamOrBufferWriter is Stream output)
+            {
+                var streamBufferWriter = new StreamBufferWriter(output);
+                bufferWriter = streamBufferWriter;
+                flush = streamBufferWriter.Flush;
+            }
+            else
+                throw new ArgumentException(
+                    $"Expected Stream or IBufferWriter<byte>.  Found {streamOrBufferWriter}",
+                    nameof(streamOrBufferWriter));
+
+            var emitter = new MessagePackEmitter(bufferWriter, flush, handlers,
+                defaultHandler, transform);
 
             SetSubHandler(handlers, emitter);
             WriteCache wc = new WriteCache();
 
-            return new MsgPackWriter<T>(output, emitter, wc);
+            return new MsgPackWriter<T>(streamOrBufferWriter as Stream, emitter, wc);
         }
 
         private class MsgPackWriter<T> : IWriter<T>

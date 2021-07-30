@@ -137,7 +137,7 @@ namespace Sellars.Transit.Cljr.Impl
             SetSubHandler(handlers, emitter);
             WriteCache wc = new WriteCache(!verboseMode);
 
-            return new Writer<T>(output, emitter, wc);
+            return new Writer<T>(output, emitter, wc, output.Flush);
         }
 
         internal class Writer<T> : IWriter<T>
@@ -145,18 +145,20 @@ namespace Sellars.Transit.Cljr.Impl
             private Stream output; 
             private IEmitter emitter;
             private WriteCache wc;
+            private readonly Action flush;
 
-            public Writer (Stream output, IEmitter emitter, WriteCache wc)
+            public Writer (Stream output, IEmitter emitter, WriteCache wc, Action flush)
 	        {
                 this.output = output;
                 this.emitter = emitter;
                 this.wc = wc;
-	        }
+                this.flush = flush;
+            }
 
             public void Write(T value)
             {
                 emitter.Emit(value, false, wc.Init());
-                output.Flush();
+                flush?.Invoke();
             }
         }
     }
