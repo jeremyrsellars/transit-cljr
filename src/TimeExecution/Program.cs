@@ -2,25 +2,29 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
+using System.IO.Pipelines;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using clojure.lang;
 using Sellars.Transit.Alpha;
+using TimeExecution.In;
+using TimeExecution.Out;
 
 namespace TimeExecution
 {
-    using SUTTransitFactory = Utf8TransitFactory;
-    //using SUTTransitFactory = TransitFactory;
-    class Program
+    using Format = Sellars.Transit.Alpha.TransitFactory.Format;
+    using DefaultTransitFactory = TransitFactory;
+    static class Program
     {
         const bool skipBrotli = true;
 
         const int bytesSize = 1024;
 #if DEBUG
-        const int defIterations = 1000000;
+        const int defIterations = 100;//0000;
 #else
         const int defIterations = 1000000;
 #endif
@@ -30,10 +34,11 @@ namespace TimeExecution
         static TimeSpan prevReport = stopwatch.Elapsed;
         static string nextMessage;
 
-        static void Inc(string message = null, int? per = default, int forceGC = 2)
+        static void Inc(string message = null, int? per = default, int forceGC = 2, bool silent = false)
         {
             GC.Collect(forceGC);
             var elapsed = stopwatch.Elapsed;
+            if(!silent)
             Console.WriteLine(string.Join("\t", new string[] {
                 ctr++.ToString(),
                 FormatTimeSpan(elapsed),
@@ -46,7 +51,7 @@ namespace TimeExecution
             nextMessage = message;
         }
 
-        private static string FormatTimeSpan(TimeSpan ts, int minLength = 10)
+        private static string FormatTimeSpan(TimeSpan ts, int minLength = 11)
         {
             //if (ts.TotalMinutes >= 1)
             //    return ts.ToString("c");
@@ -62,6 +67,7 @@ namespace TimeExecution
 
         private static (long Size, int Iterations, object Val, bool alsoJson) DefaultValEtc()
         {
+            //return (16000, defIterations / 100, Enumerable.Range(1000, 1000).ToDictionary(i => (double)i * 10000, i => (double)i * 10000), false);
             var bytes = Enumerable.Range(0, bytesSize).Select(i => unchecked((byte)i)).ToArray();
             var val =
                 //new ArrayList
@@ -116,53 +122,151 @@ namespace TimeExecution
 
         static void Main(string[] args)
         {
-            Inc("Init: " + typeof(SUTTransitFactory));
+            ReadValFromArgsOrDefault(args); // warmup.
+            Inc("Init");
             var (size, iterations, val, alsoJson) = ReadValFromArgsOrDefault(args);
+            Inc($"Initializing MemoryStream {InitCapacity}");
             using var stream = new MemoryStream(InitCapacity);
+
+            // Warmup without output.
+            var @out = Console.Out;
+            Console.SetOut(new StringWriter());
+            Run(size, 10, val, alsoJson, stream); // warmup
+            Console.SetOut(@out);
+
+            Run(size, iterations, val, alsoJson, stream);
+        }
+
+        static void Run(long size, int iterations, object val, bool alsoJson, MemoryStream stream)
+        {
+            //ReadValFromArgsOrDefault(args); // warmup.
+            //Inc("Init");
+            //var (size, iterations, val, alsoJson) = ReadValFromArgsOrDefault(args);
+            //Inc($"Initializing MemoryStream {InitCapacity}");
+            //using var stream = new MemoryStream(InitCapacity);
 
             Inc();
             int? per = default;
-            foreach (var format in new[] {
-//#if !DEBUG
-                TransitFactory.Format.JsonVerbose, 
-//#endif
-                TransitFactory.Format.Json,
+            var formats = new[] {
+                Format.JsonVerbose,
+                Format.Json,
 #if !DEBUG
                 //TransitFactory.Format.MsgPack,
 #endif
-            })
+            };
+            var singleMessage = Enumerable.Repeat(val, iterations);
+            var OutputDestinations = new IOutputDestination<object>[] {
+                new StreamDestination<object>
+                {
+                    CreateEnumerableWriter = TransitFactory.Writer<IEnumerable<object>>,
+                    CreateWriter = TransitFactory.Writer<object>,
+                    CustomHandlers = TransitWriters,
+                },
+                //new PipeWriterOutputDestination<object>
+                //{
+                //    CreateEnumerableWriter = TransitFactory.Writer<IEnumerable<object>>,
+                //    CreateWriter = TransitFactory.Writer<object>,
+                //    CustomHandlers = TransitWriters,
+                //},
+                new StreamDestination<object>
+                {
+                    CreateEnumerableWriter = Utf8TransitFactory.Writer<IEnumerable<object>>,
+                    CreateWriter = Utf8TransitFactory.Writer<object>,
+                    CustomHandlers = TransitWriters,
+                },
+                new PipeWtrDestination<object>
+                {
+                    CreateEnumerableWriter = Utf8TransitFactory.Writer<IEnumerable<object>>,
+                    CreateWriter = Utf8TransitFactory.Writer<object>,
+                    CustomHandlers = TransitWriters,
+                },
+            };
+            var InputSources = new IInputSource<object>[] {
+                new StreamSource<object>
+                {
+                    CreateReader = TransitFactory.Reader,
+                    CustomHandlers = TransitReaders,
+                },
+                //new PipeReaderInputSource<object>
+                //{
+                //    CreateReader = TransitFactory.Reader,
+                //    CustomHandlers = TransitReaders,
+                //},
+                new StreamSource<object>
+                {
+                    CreateReader = Utf8TransitFactory.Reader,
+                    CustomHandlers = TransitReaders,
+                },
+                new PipeRdrSource<object>
+                {
+                    CreateReader = Utf8TransitFactory.Reader,
+                    CustomHandlers = TransitReaders,
+                },
+                new ByteArraySource<object>
+                {
+                    CreateReader = Utf8TransitFactory.Reader,
+                    CustomHandlers = TransitReaders,
+                },
+            };
+            foreach (var format in formats)
             {
-                stream.Position = 0;
-                stream.SetLength(stream.Position);
-                Inc(nameof(TestWrite1) + ":" + format, per: per); // wait to initialize `per` until we've done that many.
-                TestWrite1(format, stream, val, iterations);
-                per = iterations;
+                foreach (var destination in OutputDestinations)
+                {
+                    stream.Position = 0;
+                    stream.SetLength(stream.Position);
+                    var dst = InitDestination(destination);
+                    dst.Type = format;
+                    Inc(dst.Describe() + ":" + nameof(dst.WriteAtOnce) + ":" + format, silent: true); // wait to initialize `per` until we've done that many.
+                    dst.WriteAtOnce();
+                    Inc("Done: @" + stream.Position, per: iterations);
+                    per = iterations;
+                }
 
                 MaybeBrotliEncodeDecode(stream, per);
 
-                Inc(nameof(TestRead1) + ":" + format + ":" + stream.Position, per: per);
-                stream.SetLength(stream.Position);
-                stream.Position = 0;
-                TestRead1(format, stream);
-                per = iterations;
+                foreach (var source in InputSources)
+                {
+                    stream.Position = 0;
+                    var dst = InitSource(source);
+                    dst.Type = format;
+                    Inc(dst.Describe() + ":" + nameof(dst.ReadAtOnce) + ":" + format, silent: true); // wait to initialize `per` until we've done that many.
+                    var list = (IList)dst.ReadAtOnce();
+                    Inc("Done: @" + stream.Position, per: iterations);
+                    per = iterations;
+                    AssertAreEqual(val, list[0]);
+                    AssertAreEqual(val, list[iterations - 1]);
+                }
 
-                stream.Position = 0;
-                stream.SetLength(stream.Position);
-                Inc(nameof(TestWriteMany) + ":" + format, per: per);
-                TestWriteMany(format, stream, new[] { val }, iterations);
-                per = iterations;
+                foreach (var destination in OutputDestinations)
+                {
+                    stream.Position = 0;
+                    stream.SetLength(stream.Position);
+                    var dst = InitDestination(destination);
+                    dst.Type = format;
+                    Inc(dst.Describe() + ":" + nameof(dst.WriteStreaming) + ":" + format, silent: true); // wait to initialize `per` until we've done that many.
+                    dst.WriteStreaming();
+                    Inc("Done: @" + stream.Position, per: iterations);
+                    per = iterations;
+                }
 
                 MaybeBrotliEncodeDecode(stream, per);
 
-                Inc(nameof(TestReadMany) + ":" + format + ":" + stream.Position, per: per);
-                stream.SetLength(stream.Position);
-                stream.Position = 0;
-                TestReadMany(format, stream, iterations);
+                foreach (var source in InputSources)
+                {
+                    stream.Position = 0;
+                    var dst = InitSource(source);
+                    dst.Type = format;
+                    Inc(dst.Describe() + ":" + nameof(dst.ReadStreaming) + ":" + format, silent: true); // wait to initialize `per` until we've done that many.
+                    per = iterations;
+                    var last = dst.ReadStreaming();
+                    Inc("Done: @" + stream.Position, per: iterations);
+                    AssertAreEqual(val, last);
+                }
+
+                Inc("Done: @" + stream.Position);
             }
 
-            Inc("Done:" + stream.Position, per: per);
-
-            if(alsoJson)
+            if (alsoJson)
             {
                 stream.Position = 0;
                 Inc(nameof(TestJSWrite1) + ":" + "S.T.Json");
@@ -186,11 +290,41 @@ namespace TimeExecution
                 stream.Position = 0;
                 TestJSReadMany<MyNamedValue>(stream, iterations);
 
-                Inc("Done:" + stream.Position, per: per);
+                Inc("Done: @" + stream.Position, per: per);
             }
 
             if (stream.Capacity > InitCapacity)
                 Console.Error.WriteLine($"The stream grew from {InitCapacity} to {stream.Capacity}");
+
+            IOutputDestination<object> InitDestination(IOutputDestination<object> destination)
+            {
+                destination.SetStream(stream);
+                destination.DefaultHandler = null;
+                destination.Iterations = iterations;
+                destination.Transform = null;
+                destination.Value = val;
+                return destination;
+            }
+            IInputSource<object> InitSource(IInputSource<object> source)
+            {
+                source.SetStream(stream);
+                source.DefaultHandler = null;
+                source.Iterations = iterations;
+                source.Value = val;
+                return source;
+            }
+        }
+
+        [Conditional("DEBUG")]
+        private static void AssertAreEqual<T>(T expected, object actual)
+        {
+            if (actual == null)
+                throw new Exception("Actual is null");
+
+            //if (expected.Equals((T)actual))
+            //    return;
+            //var message = $"Not equal. Expected {expected}. Actual: {actual}";
+            //Console.Error.WriteLine(message);
         }
 
         private static (long Size, int Iterations, object Val, bool alsoJson) ReadValFromArgsOrDefault(string[] args)
@@ -201,19 +335,23 @@ namespace TimeExecution
             if (args.Length == 1)
                 return ReadValFromFile(args[0]);
 
-            return args.Select(ReadValFromFile).Aggregate(
+            return args.AsParallel().Select(ReadValFromFile).Aggregate(
                 (Size: 0L, Iterations:1, List: ImmutableList<object>.Empty, false),
                 (a, t) => (a.Size + t.Size, CalcIterations(a.Size + t.Size), a.List.Add(t.Val), false));
         }
 
         private static (long Size, int Iterations, object Val, bool alsoJson) ReadValFromFile(string filename)
         {
-            var size = new FileInfo(filename).Length;
+            if (Directory.Exists(filename))
+                return ReadValFromArgsOrDefault(Directory.GetFiles(filename, "*.json"));
+
+            var fileInfo = new FileInfo(filename);
+            var size = fileInfo.Length;
             using var stream = File.OpenRead(filename);
             return (
                 size,
                 CalcIterations(size),
-                TransitFactory.Reader(TransitFactory.Format.Json, stream).Read(),
+                DefaultTransitFactory.Reader(TransitFactory.Format.Json, stream).Read(),
                 false);
         }
 
@@ -251,30 +389,30 @@ namespace TimeExecution
             return s;
         }
 
-        static void TestWrite1<T>(TransitFactory.Format format, Stream stream, T val, int iterations)
+        static void TestWriteMany<T, TOut>(
+            TransitFactory.Format format,
+            Stream stream, Func<T, Stream, IOutputDestination<T, TOut>> createOutput,
+            T val, int iterations)
+            where T : IList
         {
-            var writer = SUTTransitFactory.Writer<IEnumerable<T>>(format, stream, TransitWriters, null, null);
-            writer.Write(Enumerable.Repeat(val, iterations));
-        }
-
-        static void TestRead1(TransitFactory.Format format, Stream stream)
-        {
-            var writer = SUTTransitFactory.Reader(format, stream, TransitReaders, null);
-            var x = writer.Read();
-        }
-
-        static void TestWriteMany(TransitFactory.Format format, Stream stream, IList val, int iterations)
-        {
-            var writer = SUTTransitFactory.Writer<IList>(format, stream, TransitWriters, null, null);
+            var x = createOutput(val, stream);
+            var writer = x.CreateWriter(format, x.Output, TransitWriters, null, null);
             for (int ct = iterations; ct > 0; ct--)
                 writer.Write(val);
         }
 
-        static void TestReadMany(TransitFactory.Format format, Stream stream, int iterations)
+        static object TestReadMany<T, TIn>(
+            TransitFactory.Format format,
+            Stream stream, Func<T, Stream, IInputSource<T, TIn>> createInput,
+            T val, int iterations)
+            where T : IList
         {
-            var writer = SUTTransitFactory.Reader(format, stream, TransitReaders, null);
+            var x = createInput(val, stream);
+            var reader = x.CreateReader(format, x.Input, TransitReaders, null);
+            object o = null;
             for (int ct = iterations; ct > 0; ct--)
-                writer.Read();
+                o = reader.Read();
+            return o;
         }
 
         static void TestJSWrite1<T>(MemoryStream stream, T val, int iterations)
@@ -327,6 +465,12 @@ namespace TimeExecution
                     { typeof(MyVersion), new MyVersionWriteHandler() },
                     { typeof(MyNamedValue), new MyNamedValueWriteHandler() },
                 };
+
+        internal static PipeWriter ToPipeWriter(this Stream stream) =>
+            PipeWriter.Create(stream, new StreamPipeWriterOptions(leaveOpen: true));
+
+        internal static PipeReader ToPipeReader(this Stream stream) =>
+            PipeReader.Create(stream, new StreamPipeReaderOptions(leaveOpen: true));
     }
 
     public class KeywordJsonConverter : JsonConverter<Keyword>
@@ -337,5 +481,4 @@ namespace TimeExecution
         public override void Write(Utf8JsonWriter writer, Keyword value, JsonSerializerOptions options) =>
             writer.WriteStringValue(value.ToString());
     }
-
 }
