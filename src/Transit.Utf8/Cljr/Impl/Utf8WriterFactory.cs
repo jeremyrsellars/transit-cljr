@@ -22,8 +22,11 @@ namespace Sellars.Transit.Cljr.Alpha
                     // Why UnsafeRelaxedJsonEscaping? The default encoder encodes some transit type declaration chars like `"`.
                     // "It can be used if the output data is within a response whose content-type is known with a charset set to UTF-8." - https://docs.microsoft.com/en-us/dotnet/api/system.text.encodings.web.javascriptencoder.unsaferelaxedjsonescaping?view=net-5.0
                     Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+#if !DEBUG
+                    SkipValidation = true,
+#endif
                 });
-            IImmutableDictionary<Type, IWriteHandler> handlers = Handlers(customHandlers);
+                    IImmutableDictionary<Type, IWriteHandler> handlers = Handlers(customHandlers);
             AbstractEmitter emitter;
             if (verboseMode)
             {
@@ -49,6 +52,9 @@ namespace Sellars.Transit.Cljr.Alpha
                     // Why UnsafeRelaxedJsonEscaping? The default encoder encodes some transit type declaration chars like `"`.
                     // "It can be used if the output data is within a response whose content-type is known with a charset set to UTF-8." - https://docs.microsoft.com/en-us/dotnet/api/system.text.encodings.web.javascriptencoder.unsaferelaxedjsonescaping?view=net-5.0
                     Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+#if !DEBUG
+                    SkipValidation = true,
+#endif
                 });
             IImmutableDictionary<Type, IWriteHandler> handlers = Handlers(customHandlers);
             AbstractEmitter emitter;
